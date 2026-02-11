@@ -1,0 +1,6 @@
+# Marketplace Unidades Residenciales
+# Python 3.10+
+
+# Opcional para validaciones y configuración futura
+# pydantic>=2.0
+# python-dotenv>=1.0
