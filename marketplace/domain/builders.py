@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 from dataclasses import replace
 from .exceptions import ValidationError
 from .producto import Producto
@@ -6,6 +7,13 @@ from .usuario import Usuario
 from .categoria import Categoria
 
 class ProductoBuilder:
+    """
+    Builder para crear productos con validaciones.
+    
+    Nota: Las validaciones principales están en la entidad Producto.
+    Este builder solo valida reglas de negocio específicas del proceso de publicación.
+    """
+    
     def __init__(self, max_images: int = 4):
         self.max_images = max_images
         self._vendedor: Usuario | None = None
@@ -32,6 +40,10 @@ class ProductoBuilder:
         return self
 
     def precio_cop(self, precio: int):
+        """
+        Establece el precio en COP.
+        Validación de rango de negocio: 1.000 - 50.000.000 COP.
+        """
         self._precio_cop = int(precio)
         return self
 
@@ -45,6 +57,10 @@ class ProductoBuilder:
         return self
 
     def build(self) -> Producto:
+        """
+        Construye el producto.
+        Valida reglas de negocio específicas de publicación antes de crear la entidad.
+        """
         if self._vendedor is None:
             raise ValidationError("Vendedor requerido.")
         if self._categoria is None:
@@ -56,12 +72,15 @@ class ProductoBuilder:
         if self._precio_cop is None or not (1_000 <= self._precio_cop <= 50_000_000):
             raise ValidationError("Precio COP debe estar entre 1.000 y 50.000.000.")
 
-        # Ajusta esto a tu dataclass real de Producto (campos exactos).
+        # Convertir precio a Decimal
+        precio_decimal = Decimal(str(self._precio_cop))
+
+        # Crear producto (las validaciones de la entidad se ejecutarán en __post_init__)
         return Producto(
             id=str(uuid.uuid4()),
             nombre=self._nombre,
             descripcion=self._descripcion,
-            precio=self._precio_cop,
+            precio=precio_decimal,  # Usar Decimal
             vendedor=self._vendedor,
             categoria=self._categoria,
             imagenes=list(self._imagenes),

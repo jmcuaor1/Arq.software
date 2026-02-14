@@ -3,13 +3,13 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from marketplace.unidad_residencial import UnidadResidencial
-from marketplace.usuario import Usuario
-from marketplace.producto import Producto
-from marketplace.servicio import Servicio
-from marketplace.categoria import Categoria
-from marketplace.carrito import Carrito
-from marketplace.transaccion import Transaccion
+from .unidad_residencial import UnidadResidencial
+from .usuario import Usuario
+from .producto import Producto
+from .servicio import Servicio
+from .categoria import Categoria
+from .carrito import Carrito
+from .transaccion import Transaccion
 
 
 @dataclass

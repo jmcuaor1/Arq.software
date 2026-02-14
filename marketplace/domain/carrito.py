@@ -3,9 +3,9 @@
 from dataclasses import dataclass, field
 from typing import List, Union
 
-from marketplace.usuario import Usuario
-from marketplace.producto import Producto
-from marketplace.servicio import Servicio
+from .usuario import Usuario
+from .producto import Producto
+from .servicio import Servicio
 
 
 @dataclass
