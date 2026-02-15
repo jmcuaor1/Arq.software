@@ -2,7 +2,8 @@ from typing import Optional, List
 from ..domain.usuario import Usuario
 from ..domain.categoria import Categoria
 from ..domain.unidad_residencial import UnidadResidencial
-from ..domain.producto import Producto
+from ..domain.servicio import Servicio
+from ..domain.consulta import Consulta
 
 class InMemoryProductoRepository:
     def __init__(self):
@@ -55,3 +56,30 @@ class InMemoryUnidadResidencialRepository:
     
     def list_all(self) -> List[UnidadResidencial]:
         return list(self.db.values())
+
+class InMemoryServicioRepository:
+    def __init__(self):
+        self.db = {}
+
+    def add(self, servicio: Servicio):
+        self.db[servicio.id] = servicio
+
+    def get(self, id: str) -> Optional[Servicio]:
+        return self.db.get(id)
+
+    def list_all(self) -> List[Servicio]:
+        return list(self.db.values())
+
+class InMemoryConsultaRepository:
+    def __init__(self):
+        self.db = {}
+
+    def add(self, consulta: Consulta):
+        self.db[consulta.id] = consulta
+
+    def get(self, id: str) -> Optional[Consulta]:
+        return self.db.get(id)
+
+    def list_all(self) -> List[Consulta]:
+        return list(self.db.values())
+

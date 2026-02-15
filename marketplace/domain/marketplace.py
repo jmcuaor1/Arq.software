@@ -8,8 +8,7 @@ from .usuario import Usuario
 from .producto import Producto
 from .servicio import Servicio
 from .categoria import Categoria
-from .carrito import Carrito
-from .transaccion import Transaccion
+from .consulta import Consulta
 
 
 @dataclass
@@ -22,8 +21,7 @@ class Marketplace:
     productos: List[Producto] = field(default_factory=list)
     servicios: List[Servicio] = field(default_factory=list)
     categorias: List[Categoria] = field(default_factory=list)
-    transacciones: List[Transaccion] = field(default_factory=list)
-    carritos: dict = field(default_factory=dict)  # usuario_id -> Carrito
+    consultas: List[Consulta] = field(default_factory=list)
 
     def registrar_categoria(self, categoria: Categoria) -> None:
         """Registra una categoría en el marketplace."""
@@ -37,6 +35,10 @@ class Marketplace:
     def publicar_servicio(self, servicio: Servicio) -> None:
         """Publica un servicio en el marketplace."""
         self.servicios.append(servicio)
+
+    def registrar_consulta(self, consulta: Consulta) -> None:
+        """Registra una consulta en el marketplace."""
+        self.consultas.append(consulta)
 
     def buscar_productos(
         self, categoria: Optional[Categoria] = None, texto: Optional[str] = None
@@ -65,16 +67,6 @@ class Marketplace:
         if solo_disponibles:
             resultados = [s for s in resultados if s.disponible]
         return resultados
-
-    def obtener_carrito(self, usuario: Usuario) -> Carrito:
-        """Obtiene o crea el carrito de un usuario."""
-        if usuario.id not in self.carritos:
-            self.carritos[usuario.id] = Carrito(usuario=usuario)
-        return self.carritos[usuario.id]
-
-    def registrar_transaccion(self, transaccion: Transaccion) -> None:
-        """Registra una transacción completada."""
-        self.transacciones.append(transaccion)
 
     def __str__(self) -> str:
         return f"Marketplace '{self.nombre}' - {len(self.productos)} productos, {len(self.servicios)} servicios"

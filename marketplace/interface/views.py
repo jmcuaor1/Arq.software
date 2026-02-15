@@ -13,17 +13,21 @@ from .serializers import (
     UnidadResidencialSerializer, 
     CategoriaSerializer,
     ProductoSerializer, 
-    PublicarProductoSerializer
+    PublicarProductoSerializer,
+    ServicioSerializer,
+    PublicarServicioSerializer
 )
 from ..application.services import (
     UsuarioService,
     UnidadResidencialService,
     CategoriaService,
     PublicacionService,
+    ServicioService,
     CrearUsuarioCommand,
     CrearUnidadResidencialCommand,
     CrearCategoriaCommand,
     PublicarProductoCommand,
+    PublicarServicioCommand,
     ResourceAlreadyExistsError,
     ResourceNotFoundError,
 )
@@ -32,7 +36,8 @@ from ..infrastructure.repositories import (
     InMemoryProductoRepository, 
     InMemoryUsuarioRepository, 
     InMemoryCategoriaRepository, 
-    InMemoryUnidadResidencialRepository
+    InMemoryUnidadResidencialRepository,
+    InMemoryServicioRepository
 )
 
 # ============================================================================
@@ -43,6 +48,7 @@ _producto_repo = InMemoryProductoRepository()
 _usuario_repo = InMemoryUsuarioRepository()
 _categoria_repo = InMemoryCategoriaRepository()
 _unidad_repo = InMemoryUnidadResidencialRepository()
+_servicio_repo = InMemoryServicioRepository()
 
 # Servicios
 _usuario_service = UsuarioService(_usuario_repo)
@@ -50,6 +56,11 @@ _unidad_service = UnidadResidencialService(_unidad_repo)
 _categoria_service = CategoriaService(_categoria_repo)
 _publicacion_service = PublicacionService(
     producto_repo=_producto_repo,
+    usuario_repo=_usuario_repo,
+    categoria_repo=_categoria_repo
+)
+_servicio_service = ServicioService(
+    servicio_repo=_servicio_repo,
     usuario_repo=_usuario_repo,
     categoria_repo=_categoria_repo
 )
@@ -192,3 +203,117 @@ class PublicarProductoView(APIView):
                 {"error": "Error interno del servidor."}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class ProductoListView(APIView):
+    """
+    Vista para listar productos.
+    Responsabilidad: Validar HTTP y delegar a PublicacionService.
+    """
+
+    def get(self, request):
+        """Lista todos los productos."""
+        productos = _publicacion_service.listar_productos()
+        serializer = ProductoSerializer(productos, many=True)
+        return Response(serializer.data)
+
+
+class ServicioView(APIView):
+    """
+    Vista para gestión de servicios.
+    Responsabilidad: Validar HTTP y delegar a ServicioService.
+    """
+
+    def get(self, request):
+        """Lista todos los servicios."""
+        servicios = _servicio_service.listar_servicios()
+        serializer = ServicioSerializer(servicios, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """Publica un servicio."""
+        serializer = PublicarServicioSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Mapear campos del serializer al comando
+            cmd = PublicarServicioCommand(
+                proveedor_id=serializer.validated_data['proveedor_id'],
+                proveedor_status=serializer.validated_data['proveedor_status'],
+                nombre=serializer.validated_data['nombre'],
+                descripcion=serializer.validated_data['descripcion'],
+                precio_cop=serializer.validated_data['precio'],
+                categoria_id=serializer.validated_data['categoria_id']
+            )
+            servicio = _servicio_service.publicar_servicio(cmd)
+            
+            return Response(
+                ServicioSerializer(servicio).data,
+                status=status.HTTP_201_CREATED
+            )
+        except ResourceNotFoundError as e:
+            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        except DomainError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"error": "Error interno del servidor."}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class ConsultaView(APIView):
+    """
+    Vista para gestión de consultas (contacto).
+    Responsabilidad: Validar HTTP y delegar a ConsultaService.
+    """
+
+    def post(self, request):
+        """Registra una nueva consulta."""
+        serializer = RegistrarConsultaSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            cmd = RegistrarConsultaCommand(
+                comprador_id=serializer.validated_data['comprador_id'],
+                item_id=serializer.validated_data['item_id'],
+                item_type=serializer.validated_data['item_type'],
+                mensaje=serializer.validated_data.get('mensaje')
+            )
+            consulta = _consulta_service.registrar_consulta(cmd)
+            
+            return Response(
+                ConsultaSerializer(consulta).data,
+                status=status.HTTP_201_CREATED
+            )
+        except ResourceNotFoundError as e:
+            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except DomainError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"error": "Error interno del servidor."}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def get(self, request):
+        """Lista consultas por comprador o vendedor."""
+        vendedor_id = request.query_params.get('vendedor_id')
+        comprador_id = request.query_params.get('comprador_id')
+
+        if vendedor_id:
+            consultas = _consulta_service.listar_consultas_vendedor(vendedor_id)
+        elif comprador_id:
+            consultas = _consulta_service.listar_consultas_comprador(comprador_id)
+        else:
+            return Response(
+                {"error": "Debe especificar vendedor_id o comprador_id"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(ConsultaSerializer(consultas, many=True).data)
+

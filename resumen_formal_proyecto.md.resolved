@@ -1,0 +1,464 @@
+# Resumen Formal del Proyecto Académico
+## VecinoMarket – Versión Académica (Arquitectura de Software)
+
+---
+
+## 1. Contexto General
+
+**VecinoMarket** es un proyecto académico desarrollado en el marco de la asignatura **Arquitectura de Software**. El objetivo principal no es construir un producto SaaS comercial, sino **diseñar y estructurar el núcleo de negocio (Domain Core)** aplicando principios arquitectónicos sólidos y patrones de diseño reconocidos.
+
+### Principios Arquitectónicos Aplicados
+
+- **Separación de responsabilidades** (Separation of Concerns)
+- **Bajo acoplamiento** (Loose Coupling)
+- **Principios SOLID**
+- **Service Layer Pattern**
+- **Patrones de diseño**: Builder, Factory, Repository
+- **Independencia de framework**
+- **Preparación para Strangler Pattern**
+
+### Tecnología Base
+
+La implementación actual está desarrollada en **Python puro**, sin dependencia directa de Django en el dominio. Aunque el curso posteriormente migrará a Django para integrar la capa web, el núcleo de negocio permanece independiente del framework.
+
+---
+
+## 2. Problema de Negocio Modelado
+
+El sistema modela un **marketplace privado para comunidades residenciales**, donde los residentes pueden:
+
+- ✅ Publicar productos
+- ✅ Publicar servicios
+- ✅ Realizar compras
+- ✅ Gestionar transacciones
+- ✅ Navegar por categorías
+- 
+
+### Estado Actual de Implementación
+
+En la versión académica actual:
+
+- ✅ Dominio completo modelado
+- ✅ Flujo de publicación implementado
+- ✅ Modelo transaccional (carrito + transacción)
+- ✅ Separación en capas arquitectónicas
+- ✅ Validaciones de negocio en entidades
+- ✅ Service Layer funcional
+
+---
+
+## 3. Arquitectura Adoptada
+
+El proyecto implementa una **arquitectura por capas** (Layered Architecture) con clara separación de responsabilidades:
+
+```
+marketplace/
+├── domain/              # Capa de Dominio (Entidades Puras)
+├── application/         # Capa de Aplicación (Service Layer)
+├── infrastructure/      # Capa de Infraestructura (Repositorios, Factories)
+└── interface/          # Capa de Interfaz (API REST con Django)
+```
+
+### 3.1 Capa de Dominio (`domain/`)
+
+Contiene **entidades puras del negocio** que representan los conceptos fundamentales del sistema:
+
+#### Entidades Principales
+
+| Entidad | Responsabilidad | Archivo |
+|---------|----------------|---------|
+| [UnidadResidencial](file:///d:/VecinoMarket/Arq.software/marketplace/application/services.py#120-152) | Representa el conjunto residencial (edificio, torre, barrio) | [unidad_residencial.py](file:///d:/VecinoMarket/Arq.software/marketplace/domain/unidad_residencial.py) |
+| `Marketplace` | Espacio de intercambio asociado a cada unidad | [marketplace.py](file:///d:/VecinoMarket/Arq.software/marketplace/domain/marketplace.py) |
+| [Usuario](file:///d:/VecinoMarket/Arq.software/marketplace/application/services.py#81-118) | Residente que puede vender y comprar | [usuario.py](file:///d:/VecinoMarket/Arq.software/marketplace/domain/usuario.py) |
+| [Producto](file:///d:/VecinoMarket/Arq.software/marketplace/domain/producto.py#12-106) | Artículo físico en venta | [producto.py](file:///d:/VecinoMarket/Arq.software/marketplace/domain/producto.py) |
+| `Servicio` | Servicio ofrecido por residentes | [servicio.py](file:///d:/VecinoMarket/Arq.software/marketplace/domain/servicio.py) |
+| [Categoria](file:///d:/VecinoMarket/Arq.software/marketplace/application/services.py#154-186) | Clasificación de productos y servicios | [categoria.py](file:///d:/VecinoMarket/Arq.software/marketplace/domain/categoria.py) |
+| `Carrito` | Items seleccionados antes de comprar | [carrito.py](file:///d:/VecinoMarket/Arq.software/marketplace/domain/carrito.py) |
+| `Transaccion` | Compra formalizada | [transaccion.py](file:///d:/VecinoMarket/Arq.software/marketplace/domain/transaccion.py) |
+
+#### Características de las Entidades de Dominio
+
+Estas clases:
+
+- ❌ **NO** dependen de Django
+- ❌ **NO** conocen HTTP
+- ❌ **NO** conocen ORM
+- ✅ Contienen **reglas básicas de negocio**
+- ✅ Implementan **validaciones de invariantes**
+- ✅ Utilizan **dataclasses** de Python para inmutabilidad
+
+#### Ejemplo: Validaciones en [Producto](file:///d:/VecinoMarket/Arq.software/marketplace/domain/producto.py#12-106)
+
+```python
+@dataclass
+class Producto:
+    """
+    Validaciones de negocio:
+    - Nombre: 5-100 caracteres
+    - Precio: > 0, tipo Decimal para precisión monetaria
+    - Stock: >= 0
+    - Descripción: 10-500 caracteres (opcional)
+    - Imágenes: máximo 10 URLs
+    """
+    
+    def __post_init__(self):
+        """Validar invariantes de negocio."""
+        # Validaciones automáticas al crear la entidad
+```
+
+---
+
+### 3.2 Service Layer (`application/`)
+
+Orquesta **casos de uso** del sistema, coordinando entidades y repositorios.
+
+#### Servicios Implementados
+
+| Servicio | Responsabilidad | Archivo |
+|----------|----------------|---------|
+| [UsuarioService](file:///d:/VecinoMarket/Arq.software/marketplace/application/services.py#81-118) | Gestión del ciclo de vida de usuarios | [services.py](file:///d:/VecinoMarket/Arq.software/marketplace/application/services.py) |
+| [UnidadResidencialService](file:///d:/VecinoMarket/Arq.software/marketplace/application/services.py#120-152) | Gestión de unidades residenciales | [services.py](file:///d:/VecinoMarket/Arq.software/marketplace/application/services.py) |
+| [CategoriaService](file:///d:/VecinoMarket/Arq.software/marketplace/application/services.py#154-186) | Gestión de categorías | [services.py](file:///d:/VecinoMarket/Arq.software/marketplace/application/services.py) |
+| `PublicacionService` | Orquestación de publicación de productos | [services.py](file:///d:/VecinoMarket/Arq.software/marketplace/application/services.py) |
+
+#### Responsabilidades del Service Layer
+
+- ✅ Coordinar entidades
+- ✅ Validar reglas de negocio complejas
+- ✅ Invocar builders para construcción de entidades
+- ✅ Invocar repositories para persistencia
+- ✅ Ejecutar efectos secundarios (notificaciones)
+- ✅ Manejar transaccionalidad
+
+#### Ejemplo: `PublicacionService.publicar_producto()`
+
+```python
+def publicar_producto(self, cmd: PublicarProductoCommand) -> Producto:
+    # 1. Buscar vendedor
+    vendedor = self.usuario_repo.get(cmd.vendedor_id)
+    
+    # 2. Buscar categoría
+    categoria = self.categoria_repo.get(cmd.categoria_id)
+    
+    # 3. Verificar permisos
+    if cmd.vendedor_status != "APPROVED":
+        raise PermissionError("Solo usuarios APPROVED pueden publicar.")
+    
+    # 4. Construir producto usando Builder
+    producto = (ProductoBuilder(max_images=self.max_images)
+                .vendedor(vendedor)
+                .categoria(categoria)
+                .nombre(cmd.nombre)
+                .descripcion(cmd.descripcion)
+                .precio_cop(cmd.precio_cop)
+                .build())
+    
+    # 5. Persistir
+    self.producto_repo.add(producto)
+    
+    # 6. Notificar (side effect)
+    notifier = NotifierFactory.create()
+    notifier.notify_listing_created(vendedor.telefono, producto.nombre)
+    
+    return producto
+```
+
+> [!IMPORTANT]
+> El Service Layer evita que la lógica de negocio quede dispersa en las vistas (controllers), manteniendo el principio de **Single Responsibility**.
+
+---
+
+### 3.3 Patrones de Diseño Implementados
+
+#### 🏗️ Builder Pattern
+
+**Ubicación**: [domain/builders.py](file:///d:/VecinoMarket/Arq.software/marketplace/domain/builders.py)
+
+**Objetivo**:
+- Validar antes de crear entidades complejas
+- Evitar objetos en estados inconsistentes
+- Separar construcción de uso
+- Aplicar validaciones específicas del proceso de publicación
+
+**Implementación**: [ProductoBuilder](file:///d:/VecinoMarket/Arq.software/marketplace/domain/builders.py#9-88)
+
+```python
+class ProductoBuilder:
+    """
+    Builder para crear productos con validaciones.
+    Validaciones específicas del proceso de publicación.
+    """
+    
+    def __init__(self, max_images: int = 4):
+        self.max_images = max_images
+        # ... campos privados
+    
+    def vendedor(self, u: Usuario):
+        self._vendedor = u
+        return self
+    
+    def build(self) -> Producto:
+        # Validaciones de negocio antes de crear
+        if not (1_000 <= self._precio_cop <= 50_000_000):
+            raise ValidationError("Precio COP debe estar entre 1.000 y 50.000.000.")
+        
+        return Producto(...)
+```
+
+#### 🏭 Factory Pattern
+
+**Ubicación**: [infrastructure/factories.py](file:///d:/VecinoMarket/Arq.software/marketplace/infrastructure/factories.py)
+
+**Objetivo**:
+- Desacoplar infraestructura externa (ej. notificaciones)
+- No depender directamente de implementaciones concretas
+- Permitir cambio según entorno (dev vs prod)
+
+**Implementación**: [NotifierFactory](file:///d:/VecinoMarket/Arq.software/marketplace/infrastructure/factories.py#3-7)
+
+```python
+class NotifierFactory:
+    @staticmethod
+    def create():
+        # En dev: ConsoleNotifier
+        # En prod: podría ser SMSNotifier, EmailNotifier, etc.
+        return ConsoleNotifier()
+```
+
+#### 📦 Repository Pattern
+
+**Ubicación**: [infrastructure/repositories.py](file:///d:/VecinoMarket/Arq.software/marketplace/infrastructure/repositories.py)
+
+**Objetivo**:
+- Desacoplar persistencia del dominio
+- Permitir migración futura a ORM sin modificar lógica de negocio
+- Facilitar testing con repositorios en memoria
+
+**Implementación**: Repositorios en memoria
+
+```python
+class InMemoryProductoRepository:
+    def __init__(self):
+        self.db = {}
+    
+    def add(self, producto: Producto):
+        self.db[producto.id] = producto
+    
+    def get(self, id: str) -> Optional[Producto]:
+        return self.db.get(id)
+    
+    def list_all(self) -> List[Producto]:
+        return list(self.db.values())
+```
+
+> [!NOTE]
+> Los repositorios en memoria permiten testear el dominio sin dependencias externas y facilitan la migración futura a Django ORM o cualquier otra tecnología de persistencia.
+
+---
+
+### 3.4 Capa de Infraestructura (`infrastructure/`)
+
+Contiene implementaciones concretas de abstracciones del dominio:
+
+| Componente | Propósito | Archivo |
+|------------|-----------|---------|
+| Repositories | Persistencia en memoria (preparado para ORM) | [repositories.py](file:///d:/VecinoMarket/Arq.software/marketplace/infrastructure/repositories.py) |
+| Factories | Creación de dependencias externas | [factories.py](file:///d:/VecinoMarket/Arq.software/marketplace/infrastructure/factories.py) |
+| Notifiers | Implementaciones de notificaciones | [notifier.py](file:///d:/VecinoMarket/Arq.software/marketplace/infrastructure/notifier.py) |
+
+---
+
+### 3.5 Capa de Interfaz (`interface/`)
+
+Expone el dominio a través de una **API REST** usando Django REST Framework:
+
+| Componente | Propósito | Archivo |
+|------------|-----------|---------|
+| Views | Controllers REST | [views.py](file:///d:/VecinoMarket/Arq.software/marketplace/interface/views.py) |
+| Serializers | Transformación de datos | [serializers.py](file:///d:/VecinoMarket/Arq.software/marketplace/interface/serializers.py) |
+| URLs | Rutas de la API | [urls.py](file:///d:/VecinoMarket/Arq.software/marketplace/interface/urls.py) |
+
+> [!WARNING]
+> La capa de interfaz **NO** contiene lógica de negocio. Solo transforma datos y delega al Service Layer.
+
+---
+
+## 4. Independencia de Framework
+
+El diseño del dominio es **completamente independiente de Django**.
+
+### ❌ No existen referencias a:
+
+- `HttpRequest` / `HttpResponse`
+- `django.db.models.Model`
+- `django.views.View`
+- ORM de Django
+- Decorators de framework
+
+### ✅ Esto permite:
+
+- **Testear dominio aislado** sin levantar Django
+- **Migrar infraestructura** sin romper negocio
+- **Aplicar Strangler Pattern** en el futuro
+- **Reutilizar dominio** en otros contextos (CLI, microservicios, etc.)
+
+---
+
+## 5. Estado Actual del Proyecto Académico
+
+### ✅ Implementado
+
+- [x] Modelo de dominio completo
+- [x] Service Layer funcional
+- [x] Builder Pattern ([ProductoBuilder](file:///d:/VecinoMarket/Arq.software/marketplace/domain/builders.py#9-88))
+- [x] Factory Pattern ([NotifierFactory](file:///d:/VecinoMarket/Arq.software/marketplace/infrastructure/factories.py#3-7))
+- [x] Repository Pattern (In-Memory)
+- [x] Validaciones de negocio en entidades
+- [x] Demo ejecutable en Python puro
+- [x] API REST con Django (capa de interfaz)
+- [x] Separación clara de capas
+
+### 📋 Estructura de Archivos
+
+```
+marketplace/
+├── domain/
+│   ├── usuario.py              # Entidad Usuario
+│   ├── unidad_residencial.py   # Entidad UnidadResidencial
+│   ├── marketplace.py          # Entidad Marketplace
+│   ├── producto.py             # Entidad Producto
+│   ├── servicio.py             # Entidad Servicio
+│   ├── categoria.py            # Entidad Categoria
+│   ├── carrito.py              # Entidad Carrito
+│   ├── transaccion.py          # Entidad Transaccion
+│   ├── builders.py             # Builder Pattern
+│   └── exceptions.py           # Excepciones de dominio
+│
+├── application/
+│   └── services.py             # Service Layer
+│
+├── infrastructure/
+│   ├── repositories.py         # Repository Pattern
+│   ├── factories.py            # Factory Pattern
+│   └── notifier.py             # Implementaciones de notificación
+│
+├── interface/
+│   ├── views.py                # API REST Controllers
+│   ├── serializers.py          # DTOs de entrada/salida
+│   └── urls.py                 # Rutas de la API
+│
+└── demo_script.py              # Demo ejecutable
+```
+
+---
+
+## 6. Enfoque Arquitectónico del Curso
+
+El curso está guiando el proceso evolutivo desde:
+
+1. **Monolito desorganizado** (spaghetti code)
+2. **Monolito limpio** aplicando SOLID
+3. **Introducción de Service Layer**
+4. **Desacoplamiento real** (independencia de framework)
+5. **Preparación para patrón Strangler**
+6. **Posible futura extracción** a servicios externos
+
+> [!TIP]
+> VecinoMarket fue diseñado **directamente con mentalidad de desacoplamiento**, reduciendo significativamente el refactor futuro.
+
+---
+
+## 7. Diferenciación Importante
+
+### 🎓 Esta versión es académica
+
+Aunque el concepto puede escalar a SaaS multi-tenant, en el contexto del curso:
+
+- ✅ El enfoque está en **diseño arquitectónico**
+- ❌ No se expone modelo comercial real
+- ❌ No se detallan estrategias de monetización
+- ❌ No se incluyen decisiones empresariales
+
+**El énfasis es técnico y estructural.**
+
+---
+
+## 8. Objetivo del Semestre
+
+Construir un **núcleo de negocio**:
+
+- ✅ **Testeable**: Sin dependencias externas
+- ✅ **Desacoplado**: Independiente del framework
+- ✅ **Escalable**: Preparado para crecimiento
+- ✅ **Modular**: Separación clara de responsabilidades
+- ✅ **Independiente del framework**: Dominio puro
+
+### Demostrar comprensión de:
+
+1. **Principios SOLID**
+   - Single Responsibility (cada servicio una responsabilidad)
+   - Open/Closed (extensible sin modificar)
+   - Liskov Substitution (polimorfismo en repositorios)
+   - Interface Segregation (interfaces específicas)
+   - Dependency Inversion (depender de abstracciones)
+
+2. **Service Layer Pattern**
+   - Orquestación de casos de uso
+   - Separación de lógica de negocio y presentación
+
+3. **Inversión de dependencias**
+   - Dominio no depende de infraestructura
+   - Infraestructura implementa abstracciones del dominio
+
+4. **Separación de dominio e infraestructura**
+   - Dominio puro sin dependencias externas
+   - Infraestructura intercambiable
+
+5. **Diseño orientado a evolución**
+   - Preparado para Strangler Pattern
+   - Migración incremental a microservicios
+
+---
+
+## 9. Demostración Funcional
+
+El proyecto incluye un script de demostración ejecutable que muestra el flujo completo:
+
+**Archivo**: [demo_script.py](file:///d:/VecinoMarket/Arq.software/marketplace/demo_script.py)
+
+### Flujo de la Demo
+
+1. ✅ Crear Unidad Residencial
+2. ✅ Crear Marketplace asociado
+3. ✅ Registrar categorías
+4. ✅ Registrar residentes/usuarios
+5. ✅ Publicar productos
+6. ✅ Publicar servicios
+7. ✅ Agregar items al carrito
+8. ✅ Crear transacción desde el carrito
+9. ✅ Realizar búsquedas
+
+### Ejecución
+
+```bash
+python marketplace/demo_script.py
+```
+
+---
+
+## 10. Conclusión
+
+**VecinoMarket** es un proyecto académico que demuestra la aplicación práctica de principios arquitectónicos sólidos en un contexto de negocio realista. La implementación actual refleja:
+
+- 🏗️ **Arquitectura limpia** con separación de capas
+- 🎯 **Patrones de diseño** aplicados correctamente
+- 🔧 **Independencia de framework** para flexibilidad futura
+- 📚 **Preparación para evolución** arquitectónica
+
+El proyecto sirve como base sólida para futuras extensiones, ya sea hacia un SaaS multi-tenant o hacia una arquitectura de microservicios, manteniendo siempre el núcleo de negocio intacto y desacoplado.
+
+---
+
+**Autor**: Proyecto Académico - Arquitectura de Software  
+**Fecha**: Febrero 2026  
+**Versión**: Académica (Pre-SaaS)
