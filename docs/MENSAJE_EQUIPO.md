@@ -1,6 +1,6 @@
 # Nota para el Equipo: Ajuste de Alcance (Sprint 1)
 
-Oe Quao,
+Oe Cuao,
 
  Dejo este mensaje con IA que explica el cambio de alcance del sprint 1 y las modificaciones que hice. el otro archivo es md es La wiki tecnica que pide la sección 3 del entregable falta solo el diagrama de secuencia.
 
