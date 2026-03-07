@@ -391,8 +391,17 @@ class ConsultaService:
     def listar_consultas_vendedor(self, vendedor_id: str) -> List[Consulta]:
         """Lista consultas recibidas por un vendedor/proveedor."""
         todas = self.consulta_repo.list_all()
-        return [c for c in todas if c.item.vendedor.id == vendedor_id or 
-                (hasattr(c.item, 'proveedor') and c.item.proveedor.id == vendedor_id)]
+        
+        def es_vendedor_de_item(consulta: Consulta) -> bool:
+            item = consulta.item
+            # Los productos tienen .vendedor, los servicios tienen .proveedor
+            if hasattr(item, 'vendedor'):
+                return item.vendedor.id == vendedor_id
+            if hasattr(item, 'proveedor'):
+                return item.proveedor.id == vendedor_id
+            return False
+
+        return [c for c in todas if es_vendedor_de_item(c)]
 
     def listar_consultas_comprador(self, comprador_id: str) -> List[Consulta]:
         """Lista consultas realizadas por un comprador."""

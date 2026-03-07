@@ -4,6 +4,7 @@ from ..domain.categoria import Categoria
 from ..domain.unidad_residencial import UnidadResidencial
 from ..domain.servicio import Servicio
 from ..domain.consulta import Consulta
+from ..domain.producto import Producto
 
 class InMemoryProductoRepository:
     def __init__(self):
