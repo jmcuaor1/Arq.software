@@ -1,10 +1,3 @@
-"""
-Demo Script - Prueba de Nuevos Componentes Sprint 1
-Demuestra el funcionamiento de los servicios y endpoints agregados:
-- ServicioService (publicar y listar servicios)
-- TransaccionService (crear transacciones)
-"""
-
 import sys
 sys.path.insert(0, 'd:\\VecinoMarket\\Arq.software')
 
@@ -33,22 +26,19 @@ def main():
     print("DEMO - COMPONENTES SPRINT 1 (ALCANCE AJUSTADO: CONTACTO)")
     print("=" * 80)
     
-    # Inicializar repositorios
-    usuario_repo = InMemoryUsuarioRepository()
+    usuario_repo = InMemoryUsuarioRepository() #Inicializar repositorios
     categoria_repo = InMemoryCategoriaRepository()
     producto_repo = InMemoryProductoRepository()
     servicio_repo = InMemoryServicioRepository()
     consulta_repo = InMemoryConsultaRepository()
     
-    # Inicializar servicios
-    usuario_service = UsuarioService(usuario_repo)
+    usuario_service = UsuarioService(usuario_repo)    #Inicializar servicios
     categoria_service = CategoriaService(categoria_repo)
     publicacion_service = PublicacionService(producto_repo, usuario_repo, categoria_repo)
     servicio_service = ServicioService(servicio_repo, usuario_repo, categoria_repo)
     consulta_service = ConsultaService(consulta_repo, usuario_repo, producto_repo, servicio_repo)
     
-    # 1. Crear usuarios
-    print("\n1. CREANDO USUARIOS")
+    print("\n1. CREANDO USUARIOS")  #Crear usuarios
     print("-" * 80)
     
     vendedor = usuario_service.crear_usuario(CrearUsuarioCommand(
@@ -69,8 +59,7 @@ def main():
     ))
     print(f"[OK] Comprador creado: {comprador.nombre} ({comprador.email})")
     
-    # 2. Crear categorias
-    print("\n2. CREANDO CATEGORIAS")
+    print("\n2. CREANDO CATEGORIAS")  #Crear categorias
     print("-" * 80)
     
     cat_productos = categoria_service.crear_categoria(CrearCategoriaCommand(
@@ -87,8 +76,7 @@ def main():
     ))
     print(f"[OK] Categoria creada: {cat_servicios.nombre}")
     
-    # 3. Publicar producto
-    print("\n3. PUBLICANDO PRODUCTO")
+    print("\n3. PUBLICANDO PRODUCTO")   #Publicar producto
     print("-" * 80)
     
     producto = publicacion_service.publicar_producto(PublicarProductoCommand(
@@ -102,8 +90,7 @@ def main():
     ))
     print(f"[OK] Producto publicado: {producto.nombre} - ${producto.precio:,.0f}")
     
-    # 4. Publicar servicio
-    print("\n4. PUBLICANDO SERVICIO")
+    print("\n4. PUBLICANDO SERVICIO")  #Publicar servicio
     print("-" * 80)
     
     servicio = servicio_service.publicar_servicio(PublicarServicioCommand(
@@ -117,8 +104,7 @@ def main():
     print(f"[OK] Servicio publicado: {servicio.nombre} - ${servicio.precio:,.0f}")
     print(f"   Disponible: {servicio.disponible}")
     
-    # 5. Listar servicios
-    print("\n5. LISTANDO SERVICIOS")
+    print("\n5. LISTANDO SERVICIOS") #Listar servicios
     print("-" * 80)
     
     servicios = servicio_service.listar_servicios()
@@ -126,8 +112,7 @@ def main():
     for s in servicios:
         print(f"  - {s.nombre} (${s.precio:,.0f}) - Proveedor: {s.proveedor.nombre}")
     
-    # 6. Registrando consultas (NUEVO ALCANCE)
-    print("\n6. REGISTRANDO CONSULTAS (NUEVO ALCANCE: CONTACTO)")
+    print("\n6. REGISTRANDO CONSULTAS (NUEVO ALCANCE: CONTACTO)") #Registrando consultas (Nuevo alcance)
     print("-" * 80)
     
     consulta_prod = consulta_service.registrar_consulta(RegistrarConsultaCommand(
@@ -148,8 +133,7 @@ def main():
     print(f"[OK] Consulta registrada para Servicio: {consulta_serv.item.nombre}")
     print(f"   Mensaje: {consulta_serv.mensaje}")
     
-    # 7. Listar consultas para el vendedor
-    print("\n7. LISTANDO CONSULTAS RECIBIDAS POR VENDEDOR")
+    print("\n7. LISTANDO CONSULTAS RECIBIDAS POR VENDEDOR")  #Listar consultas para el vendedor
     print("-" * 80)
     
     consultas_recibidas = consulta_service.listar_consultas_vendedor("user-001")
