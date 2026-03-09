@@ -1,4 +1,4 @@
-# Nota para el Equipo: Ajuste de Alcance (Sprint 1)
+# Kevin gei
 
 Oe Cuao,
 
