@@ -95,7 +95,7 @@ class ConsultaSerializer(serializers.Serializer):
 class RegistrarConsultaSerializer(serializers.Serializer):
     """Serializer para entrada de datos de Consulta."""
     comprador_id = serializers.CharField(max_length=50)
-    item_id = serializers.CharField(max_length=20)
+    item_id = serializers.CharField(max_length=50)
     item_type = serializers.ChoiceField(choices=['producto', 'servicio'])
     mensaje = serializers.CharField(required=False, allow_blank=True, max_length=500)
 

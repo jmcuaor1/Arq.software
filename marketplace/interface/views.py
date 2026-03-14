@@ -23,11 +23,13 @@ from ..application.services import (
     CategoriaService,
     PublicacionService,
     ServicioService,
+    ConsultaService,
     CrearUsuarioCommand,
     CrearUnidadResidencialCommand,
     CrearCategoriaCommand,
     PublicarProductoCommand,
     PublicarServicioCommand,
+    RegistrarConsultaCommand,
     ResourceAlreadyExistsError,
     ResourceNotFoundError,
 )
@@ -37,8 +39,11 @@ from ..infrastructure.repositories import (
     InMemoryUsuarioRepository, 
     InMemoryCategoriaRepository, 
     InMemoryUnidadResidencialRepository,
-    InMemoryServicioRepository
+    InMemoryServicioRepository,
+    InMemoryConsultaRepository
 )
+from ..infrastructure.factories import NotifierFactory
+from .serializers import RegistrarConsultaSerializer, ConsultaSerializer
 
 # ============================================================================
 # Dependency Injection (repositorios y servicios globales)
@@ -49,6 +54,8 @@ _usuario_repo = InMemoryUsuarioRepository()
 _categoria_repo = InMemoryCategoriaRepository()
 _unidad_repo = InMemoryUnidadResidencialRepository()
 _servicio_repo = InMemoryServicioRepository()
+_consulta_repo = InMemoryConsultaRepository()
+_notifier_factory = NotifierFactory()
 
 # Servicios
 _usuario_service = UsuarioService(_usuario_repo)
@@ -64,6 +71,23 @@ _servicio_service = ServicioService(
     usuario_repo=_usuario_repo,
     categoria_repo=_categoria_repo
 )
+_consulta_service = ConsultaService(
+    consulta_repo=_consulta_repo,
+    producto_repo=_producto_repo,
+    servicio_repo=_servicio_repo,
+    usuario_repo=_usuario_repo
+)
+
+# --- Mock Data for Frontend Demo ---
+try:
+    _usuario_service.crear_usuario(CrearUsuarioCommand(id="user-001", nombre="Juan Pérez", email="juan@test.com", telefono="3001234567", apartamento="101"))
+    _usuario_service.crear_usuario(CrearUsuarioCommand(id="user-002", nombre="María García", email="mariag@test.com", telefono="3109876543", apartamento="202"))
+    _usuario_service.crear_usuario(CrearUsuarioCommand(id="user-003", nombre="Carlos López", email="carlos@test.com", telefono="3200000000", apartamento="303"))
+    _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-general", nombre="General", descripcion="General"))
+    _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-servicios", nombre="Servicios", descripcion="Servicios"))
+except ResourceAlreadyExistsError:
+    pass
+
 
 
 # ============================================================================
@@ -162,11 +186,17 @@ class CategoriaView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_409_CONFLICT)
 
 
-class PublicarProductoView(APIView):
+class ProductoListView(APIView):
     """
-    Vista para publicación de productos.
+    Vista para listar y publicar productos.
     Responsabilidad: Validar HTTP y delegar a PublicacionService.
     """
+
+    def get(self, request):
+        """Lista todos los productos."""
+        productos = _publicacion_service.listar_productos()
+        serializer = ProductoSerializer(productos, many=True)
+        return Response(serializer.data)
 
     def post(self, request):
         """Publica un producto."""
@@ -175,14 +205,13 @@ class PublicarProductoView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Delegar a servicio (toda la lógica está en el servicio)
-            # Mapear campos del serializer al comando
+            # Delegar a servicio
             cmd = PublicarProductoCommand(
                 vendedor_id=serializer.validated_data['vendedor_id'],
                 vendedor_status=serializer.validated_data['vendedor_status'],
                 nombre=serializer.validated_data['nombre'],
                 descripcion=serializer.validated_data['descripcion'],
-                precio_cop=serializer.validated_data['precio'],  # Mapeo: precio -> precio_cop
+                precio_cop=serializer.validated_data['precio'],
                 categoria_id=serializer.validated_data['categoria_id'],
                 imagenes=serializer.validated_data.get('imagenes', [])
             )
@@ -203,19 +232,6 @@ class PublicarProductoView(APIView):
                 {"error": "Error interno del servidor."}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-
-class ProductoListView(APIView):
-    """
-    Vista para listar productos.
-    Responsabilidad: Validar HTTP y delegar a PublicacionService.
-    """
-
-    def get(self, request):
-        """Lista todos los productos."""
-        productos = _publicacion_service.listar_productos()
-        serializer = ProductoSerializer(productos, many=True)
-        return Response(serializer.data)
 
 
 class ServicioView(APIView):

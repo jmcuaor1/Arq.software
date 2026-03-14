@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VecinoMarket</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="background-bubbles">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <header class="glass-header">
+        <div class="container">
+            <h1>VecinoMarket</h1>
+            <p>Conecta, publica y consulta con tus vecinos</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Dashboard actions -->
+        <section class="actions glass-panel">
+            <button id="btnProductos" class="btn active">Ver Productos</button>
+            <button id="btnServicios" class="btn">Ver Servicios</button>
+            <button id="btnConsultas" class="btn">Mis Consultas Recebidas</button>
+            <div class="flex-spacer"></div>
+            <button id="btnNuevoProducto" class="btn btn-primary">+ Publicar Producto</button>
+            <button id="btnNuevoServicio" class="btn btn-secondary">+ Ofrecer Servicio</button>
+        </section>
+
+        <!-- Content Grid -->
+        <section id="contentGrid" class="grid">
+            <!-- Items will be injected here via JS -->
+            <div class="loading">Cargando datos del servidor...</div>
+        </section>
+    </main>
+
+    <!-- Modal for Consultas -->
+    <div id="modalConsulta" class="modal">
+        <div class="modal-content glass-panel">
+            <span class="close-btn">&times;</span>
+            <h2>Me interesa este Ítem</h2>
+            <form id="formConsulta">
+                <input type="hidden" id="consultaItemId">
+                <input type="hidden" id="consultaItemType">
+                
+                <label>Actuar como Comprador:</label>
+                <select id="consultaCompradorId" required class="w-100">
+                    <option value="user-002">Pedro (Comprador) - user-002</option>
+                    <option value="user-001">Juan (Vendedor) - user-001</option>
+                </select>
+                
+                <label>Mensaje opcional:</label>
+                <textarea id="consultaMensaje" rows="3" placeholder="Hola, estoy interesado..."></textarea>
+                
+                <button type="submit" class="btn btn-primary w-100">Contactar al Vendedor</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Publicar Producto -->
+    <div id="modalProducto" class="modal">
+        <div class="modal-content glass-panel">
+            <span class="close-btn">&times;</span>
+            <h2>Publicar Producto</h2>
+            <form id="formProducto">
+                <input type="text" id="prodNombre" placeholder="Nombre (Ej. Bicicleta)" required>
+                <input type="number" id="prodPrecio" placeholder="Precio ($)" required>
+                <textarea id="prodDesc" placeholder="Descripción..."></textarea>
+                <label>Actuar como Vendedor:</label>
+                <select id="prodVendedor" required class="w-100">
+                    <option value="user-001">Juan (Vendedor) - user-001</option>
+                    <option value="user-002">Pedro (Comprador) - user-002</option>
+                </select>
+                <label>Categoría del Producto:</label>
+                <select id="prodCategoria" required class="w-100">
+                    <option value="c-general">General (c-general)</option>
+                    <option value="c-servicios">Servicios (c-servicios)</option>
+                </select>
+                <button type="submit" class="btn btn-primary w-100">Publicar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Publicar Servicio -->
+    <div id="modalServicio" class="modal">
+        <div class="modal-content glass-panel">
+            <span class="close-btn">&times;</span>
+            <h2>Ofrecer Servicio</h2>
+            <form id="formServicio">
+                <input type="text" id="servNombre" placeholder="Nombre (Ej. Plomería)" required>
+                <input type="number" id="servPrecio" placeholder="Precio Base ($)" required>
+                <textarea id="servDesc" placeholder="Descripción del servicio..."></textarea>
+                <label>Actuar como Proveedor de Servicio:</label>
+                <select id="servProveedor" required class="w-100">
+                    <option value="user-001">Juan (Vendedor) - user-001</option>
+                    <option value="user-002">Pedro (Comprador) - user-002</option>
+                </select>
+                <label>Categoría del Servicio:</label>
+                <select id="servCategoria" required class="w-100">
+                    <option value="c-servicios">Servicios (c-servicios)</option>
+                    <option value="c-general">General (c-general)</option>
+                </select>
+                <button type="submit" class="btn btn-secondary w-100">Publicar Servicio</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>
