@@ -1,7 +1,3 @@
-# Justificación Arquitectónica y Visión de Escalabilidad
-
-Este documento detalla las razones detrás de la estructura de carpetas actual y cómo esta disposición prepara a **VecinoMarket** para un crecimiento sostenido y una eventual migración a microservicios.
-
 ## 1. Justificación de la Estructura (Arquitectura Hexagonal)
 
 Hemos adoptado una estructura basada en Capas de Responsabilidad (Arquitectura Limpia/Hexagonal) para asegurar el desacoplamiento:
