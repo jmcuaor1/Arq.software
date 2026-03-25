@@ -4,31 +4,38 @@ const ItemCard = ({ item, isService, onContactClick }) => {
     const formattedPrice = new Intl.NumberFormat('es-CO', {
         style: 'currency',
         currency: 'COP',
-        maximumFractionDigits: 0
+        maximumFractionDigits: 0,
     }).format(item.precio);
 
     const userName = isService ? item.proveedor : item.vendedor;
+    const initials = userName
+        ? userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+        : '??';
 
     return (
-        <div className="glass-panel card flex flex-col justify-between">
-            <div>
-                <div className="meta">
-                    <span style={{color: 'white', background: isService ? '#48bb78' : '#4299e1', padding: '0.2rem 0.6rem', borderRadius: '4px', fontWeight: 'bold'}}>
-                        {isService ? 'Servicio' : 'Producto'}
-                    </span>
-                    <span>👤 {userName}</span>
+        <article className="card" id={`card-${isService ? 's' : 'p'}-${item.id}`}>
+            <div className="card-header">
+                <span className={`card-badge ${isService ? 'card-badge-service' : 'card-badge-product'}`}>
+                    {isService ? '⚡ Servicio' : '📦 Producto'}
+                </span>
+                <div className="card-seller">
+                    <div className="card-seller-avatar" aria-hidden="true">{initials}</div>
+                    <span>{userName}</span>
                 </div>
-                <h3>{item.nombre}</h3>
-                <div className="price">{formattedPrice}</div>
-                <p className="desc">{item.descripcion || "Sin descripción adicional"}</p>
             </div>
-            <button 
-                className={`btn ${isService ? 'btn-secondary' : 'btn-primary'} w-100 mt-4`} 
+
+            <h3 className="card-title">{item.nombre}</h3>
+            <p className="card-description">{item.descripcion || 'Sin descripción adicional'}</p>
+            <div className="card-price">{formattedPrice}</div>
+
+            <button
+                className={`btn ${isService ? 'btn-secondary' : 'btn-primary'} btn-full card-action`}
                 onClick={() => onContactClick(item, isService ? 'servicio' : 'producto')}
+                id={`contact-${isService ? 's' : 'p'}-${item.id}`}
             >
-                {isService ? 'Contactar Proveedor' : 'Contactar Vendedor'}
+                {isService ? '💬 Contactar Proveedor' : '💬 Contactar Vendedor'}
             </button>
-        </div>
+        </article>
     );
 };
 

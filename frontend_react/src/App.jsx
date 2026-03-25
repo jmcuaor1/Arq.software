@@ -1,62 +1,101 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Navbar from './components/Navbar';
+import HeroSection from './components/HeroSection';
+import FilterBar from './components/FilterBar';
 import ItemCard from './components/ItemCard';
+import EmptyState from './components/EmptyState';
 import ActionModal from './components/ActionModal';
+import Footer from './components/Footer';
 import { fetchProducts, fetchServices, publishProduct, publishService, sendConsultation } from './services/api';
 
 function App() {
+    // Data State
     const [productos, setProductos] = useState([]);
     const [servicios, setServicios] = useState([]);
-    const [toasts, setToasts] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // Modal States
-    const [activeModal, setActiveModal] = useState(null); // 'product', 'service', 'consultation'
+    // Filter State
+    const [activeFilter, setActiveFilter] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Modal State
+    const [activeModal, setActiveModal] = useState(null);
     const [consultationTarget, setConsultationTarget] = useState(null);
-
-    // Form States
     const [formData, setFormData] = useState({});
 
+    // Toast State
+    const [toasts, setToasts] = useState([]);
+
+    // Load data on mount
     useEffect(() => {
         loadData();
     }, []);
 
     const loadData = async () => {
+        setLoading(true);
         try {
-            const p = await fetchProducts();
-            const s = await fetchServices();
+            const [p, s] = await Promise.all([fetchProducts(), fetchServices()]);
             setProductos(p);
             setServicios(s);
         } catch (error) {
             showToast('Error cargando datos del servidor', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
+    // Filtered items
+    const filteredItems = useMemo(() => {
+        let items = [];
+        if (activeFilter === 'all' || activeFilter === 'products') {
+            items.push(...productos.map(p => ({ ...p, _isService: false })));
+        }
+        if (activeFilter === 'all' || activeFilter === 'services') {
+            items.push(...servicios.map(s => ({ ...s, _isService: true })));
+        }
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            items = items.filter(i => i.nombre?.toLowerCase().includes(q));
+        }
+        return items;
+    }, [productos, servicios, activeFilter, searchQuery]);
+
+    // Toast system
     const showToast = (message, type = 'success') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
         setTimeout(() => {
             setToasts(prev => prev.filter(t => t.id !== id));
-        }, 5000);
+        }, 4000);
     };
 
+    // Form handling
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // Form Submits
+    const openModal = (type, target = null) => {
+        setFormData({});
+        setConsultationTarget(target);
+        setActiveModal(type);
+    };
+
+    const closeModal = () => setActiveModal(null);
+
+    // Submit handlers
     const handleSubmitProduct = async (e) => {
         e.preventDefault();
         try {
             await publishProduct({
                 ...formData,
                 precio: parseFloat(formData.precio),
-                vendedor_status: "APPROVED" // Required by backend
+                vendedor_status: 'APPROVED',
             });
             showToast('✅ Producto publicado exitosamente');
-            setActiveModal(null);
+            closeModal();
             loadData();
-        } catch (error) {
-            showToast('❌ Ocurrió un error al publicar', 'error');
+        } catch {
+            showToast('❌ Error al publicar el producto', 'error');
         }
     };
 
@@ -66,13 +105,13 @@ function App() {
             await publishService({
                 ...formData,
                 precio: parseFloat(formData.precio),
-                proveedor_status: "APPROVED" // Required by backend
+                proveedor_status: 'APPROVED',
             });
             showToast('✅ Servicio ofrecido exitosamente');
-            setActiveModal(null);
+            closeModal();
             loadData();
-        } catch (error) {
-            showToast('❌ Ocurrió un error al ofrecer el servicio', 'error');
+        } catch {
+            showToast('❌ Error al ofrecer el servicio', 'error');
         }
     };
 
@@ -83,134 +122,197 @@ function App() {
                 comprador_id: formData.comprador_id || 'user-003',
                 item_id: consultationTarget.item.id,
                 item_type: consultationTarget.type,
-                mensaje: formData.mensaje || ''
+                mensaje: formData.mensaje || '',
             });
             showToast('📬 Mensaje enviado exitosamente');
-            setActiveModal(null);
-        } catch (error) {
+            closeModal();
+        } catch {
             showToast('❌ Error enviando mensaje', 'error');
         }
     };
 
-    // Open Modals Configuration
-    const openConsultation = (item, type) => {
-        setConsultationTarget({ item, type });
-        setFormData({});
-        setActiveModal('consultation');
+    const handleContactClick = (item, type) => {
+        openModal('consultation', { item, type });
     };
+
+    const scrollToCatalog = () => {
+        document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    // Skeleton cards for loading
+    const renderSkeletons = () => (
+        Array.from({ length: 6 }).map((_, i) => (
+            <div className="skeleton-card" key={`sk-${i}`}>
+                <div className="skeleton-line w-40"></div>
+                <div className="skeleton-line w-80 h-6"></div>
+                <div className="skeleton-line w-full"></div>
+                <div className="skeleton-line w-60"></div>
+                <div className="skeleton-line w-40 h-8"></div>
+                <div className="skeleton-line w-full h-10"></div>
+            </div>
+        ))
+    );
 
     return (
         <>
-            {/* Background Animations */}
-            <div className="background-bubbles">
-                <div className="bubble"></div>
-                <div className="bubble"></div>
-                <div className="bubble"></div>
+            {/* Background Decoration */}
+            <div className="background-orbs" aria-hidden="true">
+                <div className="orb"></div>
+                <div className="orb"></div>
+                <div className="orb"></div>
             </div>
 
-            <Navbar 
-                onOpenProductModal={() => { setFormData({}); setActiveModal('product'); }} 
-                onOpenServiceModal={() => { setFormData({}); setActiveModal('service'); }} 
+            {/* Navigation */}
+            <Navbar
+                onOpenProductModal={() => openModal('product')}
+                onOpenServiceModal={() => openModal('service')}
             />
 
+            {/* Hero */}
+            <HeroSection
+                productCount={productos.length}
+                serviceCount={servicios.length}
+                onExplore={scrollToCatalog}
+                onPublish={() => openModal('product')}
+            />
+
+            {/* Main Content */}
             <main className="container">
-                <h2 style={{marginBottom: '1rem', color: 'var(--text-secondary)'}}>📱 Catálogo de Vecinos</h2>
+                <FilterBar
+                    activeFilter={activeFilter}
+                    onFilterChange={setActiveFilter}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    resultCount={filteredItems.length}
+                />
+
                 <div className="grid">
-                    {productos.map(p => <ItemCard key={`p-${p.id}`} item={p} isService={false} onContactClick={openConsultation} />)}
-                    {servicios.map(s => <ItemCard key={`s-${s.id}`} item={s} isService={true} onContactClick={openConsultation} />)}
-                    {productos.length === 0 && servicios.length === 0 && (
-                        <p style={{color: 'var(--text-secondary)', fontStyle: 'italic'}}>Aún no hay publicaciones en la residencia.</p>
+                    {loading ? (
+                        renderSkeletons()
+                    ) : filteredItems.length > 0 ? (
+                        filteredItems.map(item => (
+                            <ItemCard
+                                key={`${item._isService ? 's' : 'p'}-${item.id}`}
+                                item={item}
+                                isService={item._isService}
+                                onContactClick={handleContactClick}
+                            />
+                        ))
+                    ) : (
+                        <EmptyState
+                            onPublishProduct={() => openModal('product')}
+                            onPublishService={() => openModal('service')}
+                        />
                     )}
                 </div>
             </main>
 
-            {/* Modals rendered conditionally */}
-            <ActionModal 
-                isOpen={activeModal === 'product'} 
-                onClose={() => setActiveModal(null)}
-                title="Publicar Nuevo Producto"
+            {/* Footer */}
+            <Footer />
+
+            {/* ===== MODALS ===== */}
+
+            {/* Publish Product */}
+            <ActionModal
+                isOpen={activeModal === 'product'}
+                onClose={closeModal}
+                title="Publicar Producto"
+                subtitle="Comparte algo con tus vecinos"
                 onSubmit={handleSubmitProduct}
             >
-                <label>Vendedor</label>
-                <select name="vendedor_id" required onChange={handleInputChange} defaultValue="">
-                    <option value="" disabled>Seleccione vendedor...</option>
-                    <option value="user-001">Juan Pérez (Apto 101)</option>
-                    <option value="user-002">María García (Apto 202)</option>
-                </select>
-
-                <label>Nombre del Producto</label>
-                <input type="text" name="nombre" placeholder="Ej: Bicicleta Trek..." required onChange={handleInputChange} />
-
-                <label>Precio (COP)</label>
-                <input type="number" name="precio" placeholder="150000" min="0" required onChange={handleInputChange} />
-
-                <label>Categoría</label>
-                <select name="categoria_id" required onChange={handleInputChange} defaultValue="">
-                    <option value="" disabled>Seleccione categoría...</option>
-                    <option value="c-general">Categoría General</option>
-                </select>
-
-                <label>Descripción</label>
-                <textarea name="descripcion" rows="3" placeholder="Detalles de estado, años de uso..." onChange={handleInputChange}></textarea>
-                
-                <button type="submit" className="btn btn-primary" style={{marginTop: '1rem'}}>Confirmar Publicación</button>
+                <div className="form-group">
+                    <label className="form-label">Vendedor</label>
+                    <select name="vendedor_id" required onChange={handleInputChange} defaultValue="" className="form-select">
+                        <option value="" disabled>Seleccione vendedor...</option>
+                        <option value="user-001">Juan Pérez (Apto 101)</option>
+                        <option value="user-002">María García (Apto 202)</option>
+                    </select>
+                </div>
+                <div className="form-group">
+                    <label className="form-label">Nombre del Producto</label>
+                    <input type="text" name="nombre" placeholder="Ej: Bicicleta Trek..." required onChange={handleInputChange} className="form-input" />
+                </div>
+                <div className="form-group">
+                    <label className="form-label">Precio (COP)</label>
+                    <input type="number" name="precio" placeholder="150000" min="0" required onChange={handleInputChange} className="form-input" />
+                </div>
+                <div className="form-group">
+                    <label className="form-label">Categoría</label>
+                    <select name="categoria_id" required onChange={handleInputChange} defaultValue="" className="form-select">
+                        <option value="" disabled>Seleccione categoría...</option>
+                        <option value="c-general">Categoría General</option>
+                    </select>
+                </div>
+                <div className="form-group">
+                    <label className="form-label">Descripción</label>
+                    <textarea name="descripcion" rows="3" placeholder="Detalles de estado, años de uso..." onChange={handleInputChange} className="form-textarea"></textarea>
+                </div>
             </ActionModal>
 
-            <ActionModal 
-                isOpen={activeModal === 'service'} 
-                onClose={() => setActiveModal(null)}
+            {/* Offer Service */}
+            <ActionModal
+                isOpen={activeModal === 'service'}
+                onClose={closeModal}
                 title="Ofrecer Servicio"
+                subtitle="Ofrece tus habilidades a la comunidad"
                 onSubmit={handleSubmitService}
             >
-                <label>Proveedor</label>
-                <select name="proveedor_id" required onChange={handleInputChange} defaultValue="">
-                    <option value="" disabled>Seleccione proveedor...</option>
-                    <option value="user-001">Juan Pérez (Apto 101)</option>
-                    <option value="user-002">María García (Apto 202)</option>
-                </select>
-
-                <label>Nombre del Servicio</label>
-                <input type="text" name="nombre" placeholder="Ej: Paseo de Perros..." required onChange={handleInputChange} />
-
-                <label>Precio (COP)</label>
-                <input type="number" name="precio" placeholder="25000" min="0" required onChange={handleInputChange} />
-
-                <label>Categoría</label>
-                <select name="categoria_id" required onChange={handleInputChange} defaultValue="">
-                    <option value="" disabled>Seleccione categoría...</option>
-                    <option value="c-servicios">Servicios Generales</option>
-                </select>
-
-                <label>Descripción</label>
-                <textarea name="descripcion" rows="3" placeholder="Disponibilidad, herramientas..." onChange={handleInputChange}></textarea>
-                
-                <button type="submit" className="btn btn-secondary" style={{marginTop: '1rem'}}>Confirmar Servicio</button>
+                <div className="form-group">
+                    <label className="form-label">Proveedor</label>
+                    <select name="proveedor_id" required onChange={handleInputChange} defaultValue="" className="form-select">
+                        <option value="" disabled>Seleccione proveedor...</option>
+                        <option value="user-001">Juan Pérez (Apto 101)</option>
+                        <option value="user-002">María García (Apto 202)</option>
+                    </select>
+                </div>
+                <div className="form-group">
+                    <label className="form-label">Nombre del Servicio</label>
+                    <input type="text" name="nombre" placeholder="Ej: Paseo de Perros..." required onChange={handleInputChange} className="form-input" />
+                </div>
+                <div className="form-group">
+                    <label className="form-label">Precio (COP)</label>
+                    <input type="number" name="precio" placeholder="25000" min="0" required onChange={handleInputChange} className="form-input" />
+                </div>
+                <div className="form-group">
+                    <label className="form-label">Categoría</label>
+                    <select name="categoria_id" required onChange={handleInputChange} defaultValue="" className="form-select">
+                        <option value="" disabled>Seleccione categoría...</option>
+                        <option value="c-servicios">Servicios Generales</option>
+                    </select>
+                </div>
+                <div className="form-group">
+                    <label className="form-label">Descripción</label>
+                    <textarea name="descripcion" rows="3" placeholder="Disponibilidad, herramientas..." onChange={handleInputChange} className="form-textarea"></textarea>
+                </div>
             </ActionModal>
 
-            <ActionModal 
-                isOpen={activeModal === 'consultation'} 
-                onClose={() => setActiveModal(null)}
-                title={`Enviar Consulta sobre: ${consultationTarget?.item?.nombre}`}
+            {/* Send Consultation */}
+            <ActionModal
+                isOpen={activeModal === 'consultation'}
+                onClose={closeModal}
+                title={`Contactar — ${consultationTarget?.item?.nombre || ''}`}
+                subtitle="Envía un mensaje privado al publicador"
                 onSubmit={handleSubmitConsultation}
             >
-                <label>Soy el interesado:</label>
-                <select name="comprador_id" required onChange={handleInputChange} defaultValue="">
-                    <option value="" disabled>Seleccione su cuenta...</option>
-                    <option value="user-001">Juan Pérez (Apto 101)</option>
-                    <option value="user-002">María García (Apto 202)</option>
-                    <option value="user-003">Carlos López (Apto 303)</option>
-                </select>
-
-                <label>Tu Mesaje Privado:</label>
-                <textarea name="mensaje" rows="4" placeholder="Escribe tu mensaje o pregunta..." required onChange={handleInputChange}></textarea>
-                
-                <button type="submit" className="btn btn-primary" style={{marginTop: '1rem'}}>Enviar Mensaje</button>
+                <div className="form-group">
+                    <label className="form-label">Soy el interesado:</label>
+                    <select name="comprador_id" required onChange={handleInputChange} defaultValue="" className="form-select">
+                        <option value="" disabled>Seleccione su cuenta...</option>
+                        <option value="user-001">Juan Pérez (Apto 101)</option>
+                        <option value="user-002">María García (Apto 202)</option>
+                        <option value="user-003">Carlos López (Apto 303)</option>
+                    </select>
+                </div>
+                <div className="form-group">
+                    <label className="form-label">Tu Mensaje Privado:</label>
+                    <textarea name="mensaje" rows="4" placeholder="Escribe tu mensaje o pregunta..." required onChange={handleInputChange} className="form-textarea"></textarea>
+                </div>
             </ActionModal>
 
             {/* Toast Notifications */}
-            <div className="toast-container">
+            <div className="toast-container" aria-live="polite">
                 {toasts.map(toast => (
-                    <div key={toast.id} className={`toast ${toast.type}`}>
+                    <div key={toast.id} className={`toast ${toast.type}`} role="alert">
                         {toast.message}
                     </div>
                 ))}

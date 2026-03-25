@@ -2,20 +2,31 @@ import React from 'react';
 
 const Navbar = ({ onOpenProductModal, onOpenServiceModal }) => {
     return (
-        <header className="glass-header">
-            <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <h1>VecinoMarket</h1>
-                    <p>Conectando el ecosistema de la Unidad Residencial</p>
-                </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                    <button className="btn btn-primary" onClick={onOpenProductModal}>
-                        + Publicar Producto
+        <header className="navbar">
+            <div className="container navbar-inner">
+                <a className="navbar-brand" href="/" aria-label="VecinoMarket inicio">
+                    <div className="navbar-logo" aria-hidden="true">V</div>
+                    <span className="navbar-brand-text">VecinoMarket</span>
+                </a>
+
+                <nav className="navbar-actions" aria-label="Acciones principales">
+                    <button
+                        className="btn btn-secondary"
+                        onClick={onOpenServiceModal}
+                        id="btn-offer-service"
+                    >
+                        <span className="btn-icon" aria-hidden="true">⚡</span>
+                        Ofrecer Servicio
                     </button>
-                    <button className="btn btn-secondary" onClick={onOpenServiceModal}>
-                        + Ofrecer Servicio
+                    <button
+                        className="btn btn-primary"
+                        onClick={onOpenProductModal}
+                        id="btn-publish-product"
+                    >
+                        <span className="btn-icon" aria-hidden="true">+</span>
+                        Publicar Producto
                     </button>
-                </div>
+                </nav>
             </div>
         </header>
     );
