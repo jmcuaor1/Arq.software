@@ -1,35 +1,43 @@
 import os
 import sys
 
-# Añadir el directorio raíz del proyecto al sys.path para que las importaciones funcionen
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+def setup_path():
+    """Asegura que el script encuentre el paquete marketplace sin importar desde dónde se llame."""
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
 
-from marketplace.application.services import (
-    UsuarioService,
-    CategoriaService,
-    PublicacionService,
-    ServicioService,
-    ConsultaService,
-    CrearUsuarioCommand,
-    CrearCategoriaCommand,
-    PublicarProductoCommand,
-    PublicarServicioCommand,
-    RegistrarConsultaCommand
-)
-from marketplace.infrastructure.repositories import (
-    InMemoryUsuarioRepository,
-    InMemoryCategoriaRepository,
-    InMemoryProductoRepository,
-    InMemoryServicioRepository,
-    InMemoryConsultaRepository
-)
+setup_path()
+
+try:
+    from marketplace.application.services import (
+        UsuarioService,
+        CategoriaService,
+        PublicacionService,
+        ServicioService,
+        ConsultaService,
+        CrearUsuarioCommand,
+        CrearCategoriaCommand,
+        PublicarProductoCommand,
+        PublicarServicioCommand,
+        RegistrarConsultaCommand
+    )
+    from marketplace.infrastructure.repositories import (
+        InMemoryUsuarioRepository,
+        InMemoryCategoriaRepository,
+        InMemoryProductoRepository,
+        InMemoryServicioRepository,
+        InMemoryConsultaRepository
+    )
+except ImportError as e:
+    print(f"❌ Error al importar los módulos: {e}")
+    print("Asegúrate de estar ejecutando el script desde la raíz del proyecto.")
+    sys.exit(1)
 
 def main():
-    print("=" * 80)
-    print("DEMO - COMPONENTES SPRINT 1 (ALCANCE AJUSTADO: CONTACTO)")
-    print("=" * 80)
+    print("\n=== EXPLORANDO EL CORAZÓN DE VECINOMARKET ===")
+    print("-" * 60)
+    print("Vamos a verificar que todo el flujo del Sprint 1 esté funcionando como debe.")
     
     usuario_repo = InMemoryUsuarioRepository() #Inicializar repositorios
     categoria_repo = InMemoryCategoriaRepository()
@@ -43,8 +51,8 @@ def main():
     servicio_service = ServicioService(servicio_repo, usuario_repo, categoria_repo)
     consulta_service = ConsultaService(consulta_repo, usuario_repo, producto_repo, servicio_repo)
     
-    print("\n1. CREANDO USUARIOS")  #Crear usuarios
-    print("-" * 80)
+    print("\n👥 Paso 1: Registrando a los primeros vecinos en la plataforma...")
+    print("-" * 60)
     
     vendedor = usuario_service.crear_usuario(CrearUsuarioCommand(
         id="user-001",
@@ -53,7 +61,7 @@ def main():
         telefono="3001112233",
         apartamento="101"
     ))
-    print(f"[OK] Vendedor creado: {vendedor.nombre} ({vendedor.email})")
+    print(f"✨ ¡Genial! Ya tenemos a {vendedor.nombre} listo para vender.")
     
     comprador = usuario_service.crear_usuario(CrearUsuarioCommand(
         id="user-002",
@@ -62,27 +70,27 @@ def main():
         telefono="3004445566",
         apartamento="202"
     ))
-    print(f"[OK] Comprador creado: {comprador.nombre} ({comprador.email})")
+    print(f"✨ Y por aquí tenemos a {comprador.nombre} buscando cositas.")
     
-    print("\n2. CREANDO CATEGORIAS")  #Crear categorias
-    print("-" * 80)
+    print("\n📂 Paso 2: Organizando el mercado con algunas categorías...")
+    print("-" * 60)
     
     cat_productos = categoria_service.crear_categoria(CrearCategoriaCommand(
         id="cat-001",
         nombre="Electronica",
         descripcion="Productos electronicos y tecnologia"
     ))
-    print(f"[OK] Categoria creada: {cat_productos.nombre}")
+    print(f"✅ Categoría '{cat_productos.nombre}' activada.")
     
     cat_servicios = categoria_service.crear_categoria(CrearCategoriaCommand(
         id="cat-002",
         nombre="Servicios del Hogar",
         descripcion="Servicios de mantenimiento y reparacion"
     ))
-    print(f"[OK] Categoria creada: {cat_servicios.nombre}")
+    print(f"✅ Categoría '{cat_servicios.nombre}' activada.")
     
-    print("\n3. PUBLICANDO PRODUCTO")   #Publicar producto
-    print("-" * 80)
+    print("\n📦 Paso 3: Subiendo el primer producto al catálogo...")
+    print("-" * 60)
     
     producto = publicacion_service.publicar_producto(PublicarProductoCommand(
         vendedor_id="user-001",
@@ -93,10 +101,10 @@ def main():
         categoria_id="cat-001",
         imagenes=["https://example.com/laptop1.jpg"]
     ))
-    print(f"[OK] Producto publicado: {producto.nombre} - ${producto.precio:,.0f}")
+    print(f"🔥 ¡Producto arriba! {producto.nombre} por solo ${producto.precio:,.0f}")
     
-    print("\n4. PUBLICANDO SERVICIO")  #Publicar servicio
-    print("-" * 80)
+    print("\n🛠️  Paso 4: Registrando un nuevo servicio en la comunidad...")
+    print("-" * 60)
     
     servicio = servicio_service.publicar_servicio(PublicarServicioCommand(
         proveedor_id="user-001",
@@ -106,19 +114,19 @@ def main():
         precio_cop=50000,
         categoria_id="cat-002"
     ))
-    print(f"[OK] Servicio publicado: {servicio.nombre} - ${servicio.precio:,.0f}")
+    print(f"✅ Servicio de '{servicio.nombre}' publicado correctamente.")
     print(f"   Disponible: {servicio.disponible}")
     
-    print("\n5. LISTANDO SERVICIOS") #Listar servicios
-    print("-" * 80)
+    print("\n🔍 Paso 5: Echando un vistazo a los servicios disponibles...")
+    print("-" * 60)
     
     servicios = servicio_service.listar_servicios()
-    print(f"Total de servicios: {len(servicios)}")
+    print(f"Ahora mismo hay {len(servicios)} servicios activos:")
     for s in servicios:
         print(f"  - {s.nombre} (${s.precio:,.0f}) - Proveedor: {s.proveedor.nombre}")
     
-    print("\n6. REGISTRANDO CONSULTAS (NUEVO ALCANCE: CONTACTO)") #Registrando consultas (Nuevo alcance)
-    print("-" * 80)
+    print("\n💬 Paso 6: Probando el sistema de mensajes entre vecinos...")
+    print("-" * 60)
     
     consulta_prod = consulta_service.registrar_consulta(RegistrarConsultaCommand(
         comprador_id="user-002",
@@ -126,8 +134,8 @@ def main():
         item_type="producto",
         mensaje="Hola, me interesa la laptop. ¿Aceptas cambios?"
     ))
-    print(f"[OK] Consulta registrada para Producto: {consulta_prod.item.nombre}")
-    print(f"   Mensaje: {consulta_prod.mensaje}")
+    print(f"Mensaje enviado sobre: {consulta_prod.item.nombre}")
+    print(f"   Dice: \"{consulta_prod.mensaje}\"")
     
     consulta_serv = consulta_service.registrar_consulta(RegistrarConsultaCommand(
         comprador_id="user-002",
@@ -135,26 +143,28 @@ def main():
         item_type="servicio",
         mensaje="¿Cuándo podrías venir a revisar mi lavadora?"
     ))
-    print(f"[OK] Consulta registrada para Servicio: {consulta_serv.item.nombre}")
-    print(f"   Mensaje: {consulta_serv.mensaje}")
+    print(f"Consulta enviada por el servicio: {consulta_serv.item.nombre}")
+    print(f"   Dice: \"{consulta_serv.mensaje}\"")
     
-    print("\n7. LISTANDO CONSULTAS RECIBIDAS POR VENDEDOR")  #Listar consultas para el vendedor
-    print("-" * 80)
+    print("\n📈 Paso 7: Revisando la bandeja de entrada del vendedor...")
+    print("-" * 60)
     
     consultas_recibidas = consulta_service.listar_consultas_vendedor("user-001")
-    print(f"Total consultas para Juan Perez: {len(consultas_recibidas)}")
+    print(f"Juan Pérez tiene {len(consultas_recibidas)} mensajes nuevos:")
     for c in consultas_recibidas:
         print(f"  - De: {c.comprador.nombre} sobre '{c.item.nombre}' - [{c.estado.value}]")
 
-    print("\n" + "=" * 80)
-    print("[OK] DEMO COMPLETADO EXITOSAMENTE")
-    print("=" * 80)
-    print("\nResumen:")
-    print(f"  - Usuarios creados: {len(usuario_service.listar_usuarios())}")
-    print(f"  - Categorias creadas: {len(categoria_service.listar_categorias())}")
-    print(f"  - Productos publicados: {len(publicacion_service.listar_productos())}")
-    print(f"  - Servicios publicados: {len(servicio_service.listar_servicios())}")
-    print(f"  - Consultas registradas: {len(consulta_service.listar_consultas_vendedor('user-001'))} (NUEVO)")
+    print("\n--- PRUEBA COMPLETADA ---")
+    print("Todo parece estar funcionando de maravilla. ¡Buen trabajo!")
+    print("-" * 60)
+    print("\n📊 RESUMEN DE LA OPERACIÓN:")
+    print(f"{'Componente':<25} | {'Cantidad':<10}")
+    print("-" * 40)
+    print(f"{'Usuarios':<25} | {len(usuario_service.listar_usuarios()):<10}")
+    print(f"{'Categorias':<25} | {len(categoria_service.listar_categorias()):<10}")
+    print(f"{'Productos':<25} | {len(publicacion_service.listar_productos()):<10}")
+    print(f"{'Servicios':<25} | {len(servicio_service.listar_servicios()):<10}")
+    print(f"{'Consultas':<25} | {len(consulta_service.listar_consultas_vendedor('user-001')):<10}")
 
 if __name__ == "__main__":
     main()
