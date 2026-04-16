@@ -12,4 +12,5 @@ def health_check():
     })
 
 if __name__ == '__main__':
+    print("--- Microservicio de Notificaciones listo y escuchando ---")
     app.run(host='0.0.0.0', port=5000)
