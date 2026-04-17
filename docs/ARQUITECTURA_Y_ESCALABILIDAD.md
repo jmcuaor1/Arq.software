@@ -1,30 +1,63 @@
-## 1. Justificación de la Estructura (Arquitectura Hexagonal)
+# Arquitectura y Escalabilidad
 
-Hemos adoptado una estructura basada en Capas de Responsabilidad (Arquitectura Limpia/Hexagonal) para asegurar el desacoplamiento:
+## 1. Justificación de la Arquitectura Hexagonal
 
-*   **`domain/` (Núcleo)**: Contiene la lógica pura de negocio y las entidades (`Producto`, `Servicio`, `Consulta`). Es agnóstica a la base de datos o al framework web.
-*   **`application/` (Casos de Uso)**: Contiene los servicios que orquestan el negocio. Aquí es donde se aplican los patrones **Command** y **Service**, permitiendo que la lógica de "Cómo se publica un producto" sea independiente de "Cómo se recibe el HTTP".
-*   **`infrastructure/` (Adaptadores)**: Gestiona la persistencia (`repositories.py`) y servicios externos. Actualmente usamos repositorios `InMemory`, pero la estructura permite cambiarlos por PostgreSQL o MongoDB sin tocar una sola línea de lógica de negocio.
-*   **`interface/` (Presentación)**: Define cómo el mundo exterior interactúa con nosotros (vía Django REST Framework).
+La capa de dominio (`marketplace/domain/`) es puro Python — cero imports de Django, DRF o cualquier framework. Esto garantiza que si mañana se reemplaza Django por FastAPI, el 80% del código (dominio + aplicación) permanece intacto.
 
-**¿Por qué esta complejidad?**
-Para evitar que el código se convierta en un "espagueti" de Django. Si mañana decidimos cambiar Django por FastAPI, el 80% del código (Dominio y Aplicación) permanecerá intacto.
+Las capas siguen una dependencia unidireccional estricta:
 
-## 2. Preparación para API Gateway y Escalabilidad
+```
+domain/ ← application/ ← infrastructure/ ← interface/
+```
 
-El diseño actual está estratégicamente preparado para un entorno de **API Gateway**:
-
-### 1. Controllers Delgados (Thin Controllers)
-Nuestras `Views` en `interface/views.py` no tienen lógica de negocio; solo validan el formato y delegan. Un API Gateway puede gestionar la autenticación, el rate limiting y el balanceo de carga antes de que la petición llegue a estos controladores, manteniéndolos ligeros.
-
-### 2. Stateless Services (Servicios sin Estado)
-Los servicios en la capa de aplicación no guardan estado local entre peticiones. Toda la información fluye a través de objetos de dominio y se persiste en los repositorios. Esto permite **escalar horizontalmente**: podemos tener 10 instancias del servidor funcionando simultáneamente detrás de un API Gateway y un balanceador de carga.
-
-### 3. Facilidad de Extracción (Microservicios)
-La arquitectura está segmentada por módulos claros. Si el volumen de `Consultas` aumenta masivamente, podemos extraer fácilmente la carpeta `domain/consulta.py` y su servicio correspondiente para crear un **Microservicio de Mensajería/Consultas** independiente. El API Gateway simplemente redirigiría el tráfico de `/api/consultas/` hacia ese nuevo servicio sin afectar al resto del sistema.
-
-### 4. Interoperabilidad
-Al usar comandos (`RegistrarConsultaCommand`) y serializers estandarizados, el sistema está listo para ser consumido por múltiples frentes (Web, App Móvil, Integraciones de terceros) a través de un punto de entrada único (el Gateway).
+Ninguna capa interna conoce a las capas externas. Las Views (`interface/`) son thin controllers: validar → construir Command → delegar. La lógica nunca sube a los controladores.
 
 ---
-**Documentación Técnica - VecinoMarket Sprint 1**
+
+## 2. Strangler Pattern — Migración Progresiva a Microservicios
+
+En el Taller 02 se aplicó el **Strangler Fig Pattern** para extraer el módulo de Notificaciones del monolito Django a un microservicio Flask independiente.
+
+### Por qué Notificaciones fue el candidato
+
+- **Alta frecuencia de cambio**: requiere agregar canales (WhatsApp, push, email) con dependencias externas distintas y ciclos de despliegue independientes.
+- **Potencial de bloqueo**: las llamadas a APIs externas (Twilio, SendGrid) tienen latencia variable; correrlas en el hilo de Django degrada todas las demás peticiones.
+- **Bajo acoplamiento**: ya estaba aislado detrás de una interfaz `Notifier` y una `NotifierFactory` — la extracción no rompió ningún contrato de dominio.
+
+### Ruteo (Nginx)
+
+```
+/api/v2/notificaciones/  →  Flask :5000   (módulo estrangulado)
+/api/v1/*                →  Django :8000  (monolito legacy)
+```
+
+El monolito no sabe que `/api/v2/notificaciones/` existe. Nginx intercepta el tráfico antes de que llegue a Django.
+
+---
+
+## 3. Preparación para Escalabilidad
+
+### Thin Controllers
+
+Las Views no tienen lógica de negocio. Un API Gateway puede agregar autenticación, rate limiting y balanceo de carga antes de que la petición llegue a los controladores.
+
+### Servicios sin Estado (Stateless)
+
+Los servicios de aplicación no guardan estado local entre peticiones. Esto permite **escalar horizontalmente**: múltiples instancias de Django o Flask detrás de un balanceador sin coordinación de sesión.
+
+### Repositorios Intercambiables
+
+Los repositorios `InMemory*` implementan la misma interfaz que implementaría un repositorio con PostgreSQL. Migrar a base de datos real = crear `DjangoORM*Repository` e inyectarlo en `views.py`. El dominio y la aplicación no cambian.
+
+### Próximos módulos candidatos a estrangular
+
+| Módulo | Razón |
+|---|---|
+| Consultas / Mensajería | Alto volumen esperado; podría tener su propia cola de mensajes |
+| Búsqueda / Catálogo | Puede necesitar Elasticsearch independiente del modelo relacional |
+
+---
+
+## 4. Interoperabilidad
+
+El uso de Commands estandarizados y serializers DRF deja el sistema listo para ser consumido por múltiples clientes (web, móvil, integraciones terceros) a través de un único punto de entrada (Nginx / API Gateway futuro).

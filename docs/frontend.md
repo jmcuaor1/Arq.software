@@ -1,40 +1,54 @@
 # Documentación del Frontend (React SPA)
 
-El frontend de VecinoMarket ha sido migrado a React para proporcionar una experiencia de usuario rápida y moderna utilizando una estética de **Glassmorphism**.
+Frontend de VecinoMarket construido con React 19.2 y Vite 8. Implementa un **dark theme premium** con design system propio basado en CSS custom properties.
 
-## Tecnologías Utilizadas
-*   **React 18**: Librería base.
-*   **Vite**: Herramienta de construcción (build tool) ultra rápida.
-*   **Vanilla CSS**: Estilos personalizados sin frameworks pesados.
+## Tecnologías
 
----
-
-##  Componentes UI
-Los componentes se encuentran en `frontend_react/src/components/`:
-
-1.  **Navbar.jsx**: Barra superior con navegación y botones de acción global (+ Publicar).
-2.  **ItemCard.jsx**: Tarjeta versátil que muestra tanto Productos como Servicios. Cambia de color dinámicamente según el tipo de ítem.
-3.  **ActionModal.jsx**: Modal genérico diseñado para formularios. Se utiliza para publicar productos, ofrecer servicios y enviar consultas.
+- **React 19.2** — Librería de UI
+- **Vite 8** — Build tool y dev server (HMR)
+- **Vanilla CSS** — Design system con 80+ tokens en `index.css`
 
 ---
 
-##  Capa de Servicio (Peticiones API)
-Toda la comunicación con el servidor ocurre en `frontend_react/src/services/api.js`.
+## Componentes
 
-### Funciones Principales:
-*   `fetchProducts()`: Obtiene la lista de productos del backend.
-*   `publishProduct(data)`: Envía un nuevo producto al servidor (POST).
-*   `sendConsultation(data)`: Registra un mensaje de un interesado a un vendedor.
+Ubicados en `frontend_react/src/components/`:
 
----
-
-##  Diseño Visual: Glassmorphism
-El diseño busca una apariencia "premium" mediante el uso de:
-*   `backdrop-filter: blur(16px)`: Efecto de cristal esmerilado.
-*   `linear-gradient`: Degradados suaves en botones y títulos.
-*   `background-bubbles`: Fondo animado con burbujas flotantes definidas en `index.css`.
+| Componente | Responsabilidad |
+|---|---|
+| `HeroSection.jsx` | Landing con propuesta de valor, estadísticas y CTAs |
+| `FilterBar.jsx` | Tabs (Todo / Productos / Servicios), búsqueda por texto y contador de resultados |
+| `ItemCard.jsx` | Tarjeta de producto o servicio con avatar, badge de tipo y precio con gradiente |
+| `ActionModal.jsx` | Diálogo ARIA con focus trap y cierre por Escape — usado para publicar y consultar |
+| `EmptyState.jsx` | Estado vacío con CTA para la primera publicación |
+| `Navbar.jsx` | Barra de navegación con logo y ARIA labels |
+| `Footer.jsx` | Pie de página con branding |
 
 ---
 
-##  Estado de la Aplicación
-Usamos el hook `useState` en `App.jsx` para manejar los datos del catálogo en tiempo real. Cuando una petición POST es exitosa, la función `loadData()` se vuelve a ejecutar para refrescar la pantalla sin necesidad de recargar la página.
+## Estado de la Aplicación (`App.jsx`)
+
+- Fetching paralelo con `Promise.all([fetchProducts(), fetchServices()])` al montar.
+- Filtrado por tipo y término de búsqueda con `useMemo` — sin re-fetching al escribir.
+- Skeleton loading mientras llegan los datos del backend.
+
+---
+
+## Capa de Servicios (`services/api.js`)
+
+Todas las llamadas HTTP están centralizadas aquí. Los componentes nunca usan `fetch()` directamente.
+
+| Función | Método | Endpoint |
+|---|---|---|
+| `fetchProducts()` | GET | `/api/productos/` |
+| `fetchServices()` | GET | `/api/servicios/` |
+| `publishProduct(data)` | POST | `/api/productos/` |
+| `publishService(data)` | POST | `/api/servicios/` |
+
+La URL base apunta a `http://127.0.0.1:8000/api` en desarrollo local. Con Docker, el tráfico pasa por Nginx en el puerto 8080.
+
+---
+
+## Design System
+
+El tema oscuro está definido en `index.css` mediante CSS custom properties (`--color-*`, `--spacing-*`, `--radius-*`). No usar colores o espaciados hardcodeados en componentes — siempre referenciar los tokens.
