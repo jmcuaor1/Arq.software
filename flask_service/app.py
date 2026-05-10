@@ -4,6 +4,9 @@ app = Flask(__name__)
 
 TIPOS_VALIDOS = ['email', 'sms', 'consola']
 
+# Contador simple en memoria (en producción usaría Redis/DB)
+_stats = {"notificaciones_enviadas": 0}
+
 
 def _validar_payload(data):
     errores = {}
@@ -20,15 +23,19 @@ def _validar_payload(data):
 
 
 def _enviar_notificacion(telefono, titulo, tipo):
-    """Lógica de envío extraída del ConsoleNotifier de Django."""
     mensajes = {
         'consola': f"[NOTIF-CONSOLA] {telefono} → Publicación creada: {titulo}",
         'sms':     f"[NOTIF-SMS] Enviando SMS a {telefono}: {titulo}",
         'email':   f"[NOTIF-EMAIL] Enviando email a {telefono}: {titulo}",
     }
     print(mensajes[tipo])
+    _stats["notificaciones_enviadas"] += 1
     return tipo
 
+
+# ============================================================================
+# Endpoints de Notificaciones
+# ============================================================================
 
 @app.route('/notificaciones/', methods=['GET'])
 def listar_tipos():
@@ -37,6 +44,7 @@ def listar_tipos():
         "version": "v2",
         "tipos_disponibles": TIPOS_VALIDOS,
         "uso": "POST /notificaciones/ con {telefono, titulo, tipo}",
+        "stats": _stats,
     })
 
 
@@ -63,6 +71,34 @@ def enviar_notificacion():
         }), 201
     except Exception as e:
         return jsonify({"error": "Error interno del microservicio", "detalle": str(e)}), 500
+
+
+# ============================================================================
+# Endpoint para el equipo aliado (Strangler Pattern — servicio independiente)
+# ============================================================================
+
+@app.route('/aliado/catalogo/', methods=['GET'])
+def catalogo_aliado():
+    """
+    Endpoint público del microservicio Flask para el equipo aliado.
+    Expone información del sistema de notificaciones.
+    """
+    return jsonify({
+        "sistema": "VecinoMarket - Microservicio Notificaciones",
+        "version": "2.0",
+        "canales_disponibles": TIPOS_VALIDOS,
+        "stats": _stats,
+        "estado": "operativo",
+    })
+
+
+# ============================================================================
+# Health check
+# ============================================================================
+
+@app.route('/health/', methods=['GET'])
+def health():
+    return jsonify({"status": "ok", "servicio": "flask_notifications"})
 
 
 @app.errorhandler(404)

@@ -5,6 +5,15 @@ django>=4.2
 djangorestframework>=3.14
 django-cors-headers>=4.0.0
 
-# Opcional para validaciones y configuración futura
-# pydantic>=2.0
-# python-dotenv>=1.0
+# HTTP client para comunicación entre servicios (Strangler Pattern)
+requests>=2.31.0
+
+# Async tasks
+celery[redis]==5.3.6
+redis>=5.0.0
+
+# Production server
+gunicorn>=21.2.0
+
+# Google Gemini AI (Adapter Pattern) — nuevo SDK
+google-genai>=2.0.0

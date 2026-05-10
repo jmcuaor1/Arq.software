@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import FilterBar from './components/FilterBar';
@@ -6,9 +6,85 @@ import ItemCard from './components/ItemCard';
 import EmptyState from './components/EmptyState';
 import ActionModal from './components/ActionModal';
 import Footer from './components/Footer';
-import { fetchProducts, fetchServices, publishProduct, publishService, sendConsultation } from './services/api';
+import {
+    fetchProducts,
+    fetchServices,
+    publishProduct,
+    publishService,
+    sendConsultation,
+    generarDescripcion,
+    fetchAlliedData,
+} from './services/api';
+
+// i18n básico (sin dependencia externa)
+const TRANSLATIONS = {
+    es: {
+        publishProduct: 'Publicar Producto',
+        publishService: 'Ofrecer Servicio',
+        shareWithNeighbors: 'Comparte algo con tus vecinos',
+        offerSkills: 'Ofrece tus habilidades a la comunidad',
+        contact: 'Contactar',
+        privateMessage: 'Envía un mensaje privado al publicador',
+        confirm: 'Confirmar',
+        processing: 'Procesando...',
+        productPublished: 'Producto publicado exitosamente',
+        servicePublished: 'Servicio ofrecido exitosamente',
+        messageSent: 'Mensaje enviado exitosamente',
+        errorProduct: 'Error al publicar el producto',
+        errorService: 'Error al ofrecer el servicio',
+        errorMessage: 'Error enviando mensaje',
+        loadingError: 'Error cargando datos del servidor',
+        alliedData: 'Datos del Equipo Aliado',
+        alliedUnavailable: 'El servicio aliado no está disponible en este momento.',
+        generateAI: '✨ Generar con IA',
+        generatingAI: 'Generando...',
+        seller: 'Vendedor',
+        provider: 'Proveedor',
+        productName: 'Nombre del Producto',
+        serviceName: 'Nombre del Servicio',
+        price: 'Precio (COP)',
+        category: 'Categoría',
+        description: 'Descripción',
+        iAmInterested: 'Soy el interesado:',
+        privateMsg: 'Tu Mensaje Privado:',
+    },
+    en: {
+        publishProduct: 'Publish Product',
+        publishService: 'Offer Service',
+        shareWithNeighbors: 'Share something with your neighbors',
+        offerSkills: 'Offer your skills to the community',
+        contact: 'Contact',
+        privateMessage: 'Send a private message to the publisher',
+        confirm: 'Confirm',
+        processing: 'Processing...',
+        productPublished: 'Product published successfully',
+        servicePublished: 'Service offered successfully',
+        messageSent: 'Message sent successfully',
+        errorProduct: 'Error publishing the product',
+        errorService: 'Error offering the service',
+        errorMessage: 'Error sending message',
+        loadingError: 'Error loading data from server',
+        alliedData: 'Allied Team Data',
+        alliedUnavailable: 'The allied service is not available at this time.',
+        generateAI: '✨ Generate with AI',
+        generatingAI: 'Generating...',
+        seller: 'Seller',
+        provider: 'Provider',
+        productName: 'Product Name',
+        serviceName: 'Service Name',
+        price: 'Price (COP)',
+        category: 'Category',
+        description: 'Description',
+        iAmInterested: 'I am interested:',
+        privateMsg: 'Your Private Message:',
+    },
+};
 
 function App() {
+    // i18n
+    const [lang, setLang] = useState('es');
+    const t = (key) => TRANSLATIONS[lang]?.[key] || TRANSLATIONS.es[key] || key;
+
     // Data State
     const [productos, setProductos] = useState([]);
     const [servicios, setServicios] = useState([]);
@@ -22,13 +98,21 @@ function App() {
     const [activeModal, setActiveModal] = useState(null);
     const [consultationTarget, setConsultationTarget] = useState(null);
     const [formData, setFormData] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [apiError, setApiError] = useState(null);
+
+    // Gemini AI
+    const [generatingDescription, setGeneratingDescription] = useState(false);
+
+    // Allied service
+    const [alliedData, setAlliedData] = useState(null);
 
     // Toast State
     const [toasts, setToasts] = useState([]);
 
-    // Load data on mount
     useEffect(() => {
         loadData();
+        loadAlliedData();
     }, []);
 
     const loadData = async () => {
@@ -37,14 +121,22 @@ function App() {
             const [p, s] = await Promise.all([fetchProducts(), fetchServices()]);
             setProductos(p);
             setServicios(s);
-        } catch (error) {
-            showToast('Error cargando datos del servidor', 'error');
+        } catch {
+            showToast(t('loadingError'), 'error');
         } finally {
             setLoading(false);
         }
     };
 
-    // Filtered items
+    const loadAlliedData = async () => {
+        try {
+            const data = await fetchAlliedData();
+            setAlliedData(data);
+        } catch {
+            setAlliedData({ disponible: false, datos: [] });
+        }
+    };
+
     const filteredItems = useMemo(() => {
         let items = [];
         if (activeFilter === 'all' || activeFilter === 'products') {
@@ -60,63 +152,90 @@ function App() {
         return items;
     }, [productos, servicios, activeFilter, searchQuery]);
 
-    // Toast system
     const showToast = (message, type = 'success') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
-        setTimeout(() => {
-            setToasts(prev => prev.filter(t => t.id !== id));
-        }, 4000);
+        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
     };
 
-    // Form handling
     const handleInputChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
     const openModal = (type, target = null) => {
         setFormData({});
+        setApiError(null);
         setConsultationTarget(target);
         setActiveModal(type);
     };
 
-    const closeModal = () => setActiveModal(null);
+    const closeModal = () => {
+        if (!isSubmitting) {
+            setActiveModal(null);
+            setApiError(null);
+        }
+    };
 
-    // Submit handlers
+    const handleGenerateDescription = async () => {
+        const nombre = formData.nombre;
+        if (!nombre?.trim()) return;
+        setGeneratingDescription(true);
+        try {
+            const { descripcion } = await generarDescripcion(nombre);
+            if (descripcion) {
+                setFormData(prev => ({ ...prev, descripcion }));
+            }
+        } finally {
+            setGeneratingDescription(false);
+        }
+    };
+
     const handleSubmitProduct = async (e) => {
         e.preventDefault();
+        setIsSubmitting(true);
+        setApiError(null);
         try {
             await publishProduct({
                 ...formData,
                 precio: parseFloat(formData.precio),
                 vendedor_status: 'APPROVED',
             });
-            showToast('✅ Producto publicado exitosamente');
+            showToast(`✅ ${t('productPublished')}`);
             closeModal();
             loadData();
-        } catch {
-            showToast('❌ Error al publicar el producto', 'error');
+        } catch (err) {
+            setApiError(err?.data || t('errorProduct'));
+            showToast(`❌ ${t('errorProduct')}`, 'error');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const handleSubmitService = async (e) => {
         e.preventDefault();
+        setIsSubmitting(true);
+        setApiError(null);
         try {
             await publishService({
                 ...formData,
                 precio: parseFloat(formData.precio),
                 proveedor_status: 'APPROVED',
             });
-            showToast('✅ Servicio ofrecido exitosamente');
+            showToast(`✅ ${t('servicePublished')}`);
             closeModal();
             loadData();
-        } catch {
-            showToast('❌ Error al ofrecer el servicio', 'error');
+        } catch (err) {
+            setApiError(err?.data || t('errorService'));
+            showToast(`❌ ${t('errorService')}`, 'error');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const handleSubmitConsultation = async (e) => {
         e.preventDefault();
+        setIsSubmitting(true);
+        setApiError(null);
         try {
             await sendConsultation({
                 comprador_id: formData.comprador_id || 'user-003',
@@ -124,10 +243,13 @@ function App() {
                 item_type: consultationTarget.type,
                 mensaje: formData.mensaje || '',
             });
-            showToast('📬 Mensaje enviado exitosamente');
+            showToast(`📬 ${t('messageSent')}`);
             closeModal();
-        } catch {
-            showToast('❌ Error enviando mensaje', 'error');
+        } catch (err) {
+            setApiError(err?.data || t('errorMessage'));
+            showToast(`❌ ${t('errorMessage')}`, 'error');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -139,8 +261,7 @@ function App() {
         document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    // Skeleton cards for loading
-    const renderSkeletons = () => (
+    const renderSkeletons = () =>
         Array.from({ length: 6 }).map((_, i) => (
             <div className="skeleton-card" key={`sk-${i}`}>
                 <div className="skeleton-line w-40"></div>
@@ -150,25 +271,23 @@ function App() {
                 <div className="skeleton-line w-40 h-8"></div>
                 <div className="skeleton-line w-full h-10"></div>
             </div>
-        ))
-    );
+        ));
 
     return (
         <>
-            {/* Background Decoration */}
             <div className="background-orbs" aria-hidden="true">
                 <div className="orb"></div>
                 <div className="orb"></div>
                 <div className="orb"></div>
             </div>
 
-            {/* Navigation */}
             <Navbar
                 onOpenProductModal={() => openModal('product')}
                 onOpenServiceModal={() => openModal('service')}
+                lang={lang}
+                onToggleLang={() => setLang(l => l === 'es' ? 'en' : 'es')}
             />
 
-            {/* Hero */}
             <HeroSection
                 productCount={productos.length}
                 serviceCount={servicios.length}
@@ -176,7 +295,6 @@ function App() {
                 onPublish={() => openModal('product')}
             />
 
-            {/* Main Content */}
             <main className="container">
                 <FilterBar
                     activeFilter={activeFilter}
@@ -186,7 +304,7 @@ function App() {
                     resultCount={filteredItems.length}
                 />
 
-                <div className="grid">
+                <div id="catalogo" className="grid">
                     {loading ? (
                         renderSkeletons()
                     ) : filteredItems.length > 0 ? (
@@ -205,23 +323,39 @@ function App() {
                         />
                     )}
                 </div>
+
+                {/* Sección Servicio Aliado */}
+                {alliedData && (
+                    <section className="allied-section">
+                        <h2 className="section-title">{t('alliedData')}</h2>
+                        {alliedData.disponible ? (
+                            <div className="allied-content">
+                                <pre className="allied-json">
+                                    {JSON.stringify(alliedData.datos, null, 2)}
+                                </pre>
+                            </div>
+                        ) : (
+                            <p className="allied-unavailable">{t('alliedUnavailable')}</p>
+                        )}
+                    </section>
+                )}
             </main>
 
-            {/* Footer */}
             <Footer />
 
-            {/* ===== MODALS ===== */}
-
-            {/* Publish Product */}
+            {/* Modal: Publicar Producto */}
             <ActionModal
                 isOpen={activeModal === 'product'}
                 onClose={closeModal}
-                title="Publicar Producto"
-                subtitle="Comparte algo con tus vecinos"
+                title={t('publishProduct')}
+                subtitle={t('shareWithNeighbors')}
                 onSubmit={handleSubmitProduct}
+                isSubmitting={isSubmitting}
+                submitLabel={t('confirm')}
+                apiError={apiError}
             >
                 <div className="form-group">
-                    <label className="form-label">Vendedor</label>
+                    <label className="form-label">{t('seller')}</label>
                     <select name="vendedor_id" required onChange={handleInputChange} defaultValue="" className="form-select">
                         <option value="" disabled>Seleccione vendedor...</option>
                         <option value="user-001">Juan Pérez (Apto 101)</option>
@@ -229,36 +363,63 @@ function App() {
                     </select>
                 </div>
                 <div className="form-group">
-                    <label className="form-label">Nombre del Producto</label>
-                    <input type="text" name="nombre" placeholder="Ej: Bicicleta Trek..." required onChange={handleInputChange} className="form-input" />
+                    <label className="form-label">{t('productName')}</label>
+                    <input
+                        type="text"
+                        name="nombre"
+                        placeholder="Ej: Bicicleta Trek..."
+                        required
+                        onChange={handleInputChange}
+                        className="form-input"
+                    />
                 </div>
                 <div className="form-group">
-                    <label className="form-label">Precio (COP)</label>
+                    <label className="form-label">{t('price')}</label>
                     <input type="number" name="precio" placeholder="150000" min="0" required onChange={handleInputChange} className="form-input" />
                 </div>
                 <div className="form-group">
-                    <label className="form-label">Categoría</label>
+                    <label className="form-label">{t('category')}</label>
                     <select name="categoria_id" required onChange={handleInputChange} defaultValue="" className="form-select">
                         <option value="" disabled>Seleccione categoría...</option>
                         <option value="c-general">Categoría General</option>
                     </select>
                 </div>
                 <div className="form-group">
-                    <label className="form-label">Descripción</label>
-                    <textarea name="descripcion" rows="3" placeholder="Detalles de estado, años de uso..." onChange={handleInputChange} className="form-textarea"></textarea>
+                    <label className="form-label">{t('description')}</label>
+                    <div className="description-wrapper">
+                        <textarea
+                            name="descripcion"
+                            rows="3"
+                            placeholder="Detalles de estado, años de uso..."
+                            onChange={handleInputChange}
+                            value={formData.descripcion || ''}
+                            className="form-textarea"
+                        />
+                        <button
+                            type="button"
+                            className="btn btn-ai"
+                            onClick={handleGenerateDescription}
+                            disabled={generatingDescription || !formData.nombre}
+                        >
+                            {generatingDescription ? t('generatingAI') : t('generateAI')}
+                        </button>
+                    </div>
                 </div>
             </ActionModal>
 
-            {/* Offer Service */}
+            {/* Modal: Ofrecer Servicio */}
             <ActionModal
                 isOpen={activeModal === 'service'}
                 onClose={closeModal}
-                title="Ofrecer Servicio"
-                subtitle="Ofrece tus habilidades a la comunidad"
+                title={t('publishService')}
+                subtitle={t('offerSkills')}
                 onSubmit={handleSubmitService}
+                isSubmitting={isSubmitting}
+                submitLabel={t('confirm')}
+                apiError={apiError}
             >
                 <div className="form-group">
-                    <label className="form-label">Proveedor</label>
+                    <label className="form-label">{t('provider')}</label>
                     <select name="proveedor_id" required onChange={handleInputChange} defaultValue="" className="form-select">
                         <option value="" disabled>Seleccione proveedor...</option>
                         <option value="user-001">Juan Pérez (Apto 101)</option>
@@ -266,36 +427,63 @@ function App() {
                     </select>
                 </div>
                 <div className="form-group">
-                    <label className="form-label">Nombre del Servicio</label>
-                    <input type="text" name="nombre" placeholder="Ej: Paseo de Perros..." required onChange={handleInputChange} className="form-input" />
+                    <label className="form-label">{t('serviceName')}</label>
+                    <input
+                        type="text"
+                        name="nombre"
+                        placeholder="Ej: Paseo de Perros..."
+                        required
+                        onChange={handleInputChange}
+                        className="form-input"
+                    />
                 </div>
                 <div className="form-group">
-                    <label className="form-label">Precio (COP)</label>
+                    <label className="form-label">{t('price')}</label>
                     <input type="number" name="precio" placeholder="25000" min="0" required onChange={handleInputChange} className="form-input" />
                 </div>
                 <div className="form-group">
-                    <label className="form-label">Categoría</label>
+                    <label className="form-label">{t('category')}</label>
                     <select name="categoria_id" required onChange={handleInputChange} defaultValue="" className="form-select">
                         <option value="" disabled>Seleccione categoría...</option>
                         <option value="c-servicios">Servicios Generales</option>
                     </select>
                 </div>
                 <div className="form-group">
-                    <label className="form-label">Descripción</label>
-                    <textarea name="descripcion" rows="3" placeholder="Disponibilidad, herramientas..." onChange={handleInputChange} className="form-textarea"></textarea>
+                    <label className="form-label">{t('description')}</label>
+                    <div className="description-wrapper">
+                        <textarea
+                            name="descripcion"
+                            rows="3"
+                            placeholder="Disponibilidad, herramientas..."
+                            onChange={handleInputChange}
+                            value={formData.descripcion || ''}
+                            className="form-textarea"
+                        />
+                        <button
+                            type="button"
+                            className="btn btn-ai"
+                            onClick={handleGenerateDescription}
+                            disabled={generatingDescription || !formData.nombre}
+                        >
+                            {generatingDescription ? t('generatingAI') : t('generateAI')}
+                        </button>
+                    </div>
                 </div>
             </ActionModal>
 
-            {/* Send Consultation */}
+            {/* Modal: Consulta */}
             <ActionModal
                 isOpen={activeModal === 'consultation'}
                 onClose={closeModal}
-                title={`Contactar — ${consultationTarget?.item?.nombre || ''}`}
-                subtitle="Envía un mensaje privado al publicador"
+                title={`${t('contact')} — ${consultationTarget?.item?.nombre || ''}`}
+                subtitle={t('privateMessage')}
                 onSubmit={handleSubmitConsultation}
+                isSubmitting={isSubmitting}
+                submitLabel={t('confirm')}
+                apiError={apiError}
             >
                 <div className="form-group">
-                    <label className="form-label">Soy el interesado:</label>
+                    <label className="form-label">{t('iAmInterested')}</label>
                     <select name="comprador_id" required onChange={handleInputChange} defaultValue="" className="form-select">
                         <option value="" disabled>Seleccione su cuenta...</option>
                         <option value="user-001">Juan Pérez (Apto 101)</option>
@@ -304,8 +492,8 @@ function App() {
                     </select>
                 </div>
                 <div className="form-group">
-                    <label className="form-label">Tu Mensaje Privado:</label>
-                    <textarea name="mensaje" rows="4" placeholder="Escribe tu mensaje o pregunta..." required onChange={handleInputChange} className="form-textarea"></textarea>
+                    <label className="form-label">{t('privateMsg')}</label>
+                    <textarea name="mensaje" rows="4" placeholder="Escribe tu mensaje o pregunta..." required onChange={handleInputChange} className="form-textarea" />
                 </div>
             </ActionModal>
 

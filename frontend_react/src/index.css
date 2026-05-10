@@ -1034,3 +1034,115 @@ body {
     white-space: nowrap;
     border-width: 0;
 }
+
+/* ============================================
+   Nuevos estilos — Entrega 2
+   ============================================ */
+
+/* Language switcher */
+.btn-lang {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    border-radius: var(--radius-md);
+    padding: 0.4rem 0.75rem;
+    font-size: var(--font-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-lang:hover {
+    border-color: var(--color-primary);
+    color: var(--text-primary);
+}
+
+/* Botón Generar con IA */
+.btn-ai {
+    margin-top: 0.5rem;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.4rem 0.9rem;
+    font-size: var(--font-sm);
+    cursor: pointer;
+    transition: opacity 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.btn-ai:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.description-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Spinner en botón de submit */
+.btn-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+}
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Error de API en modal */
+.form-api-error {
+    background: var(--color-error-soft);
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    color: #fca5a5;
+    font-size: var(--font-sm);
+    margin-bottom: 1rem;
+}
+.form-api-error strong {
+    text-transform: capitalize;
+}
+
+/* Sección Servicio Aliado */
+.allied-section {
+    margin-top: 3rem;
+    padding: 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xl);
+}
+.section-title {
+    font-size: var(--font-xl);
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+.allied-content {
+    overflow-x: auto;
+}
+.allied-json {
+    background: var(--bg-surface-elevated);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    color: var(--color-accent);
+    font-size: var(--font-sm);
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 300px;
+    overflow-y: auto;
+}
+.allied-unavailable {
+    color: var(--text-muted);
+    font-style: italic;
+}

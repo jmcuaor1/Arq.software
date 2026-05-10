@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Navbar = ({ onOpenProductModal, onOpenServiceModal }) => {
+const Navbar = ({ onOpenProductModal, onOpenServiceModal, lang = 'es', onToggleLang }) => {
     return (
         <header className="navbar">
             <div className="container navbar-inner">
@@ -11,12 +11,20 @@ const Navbar = ({ onOpenProductModal, onOpenServiceModal }) => {
 
                 <nav className="navbar-actions" aria-label="Acciones principales">
                     <button
+                        className="btn btn-lang"
+                        onClick={onToggleLang}
+                        aria-label={`Cambiar idioma a ${lang === 'es' ? 'English' : 'Español'}`}
+                        title={lang === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+                    >
+                        {lang === 'es' ? '🇨🇴 ES' : '🇺🇸 EN'}
+                    </button>
+                    <button
                         className="btn btn-secondary"
                         onClick={onOpenServiceModal}
                         id="btn-offer-service"
                     >
                         <span className="btn-icon" aria-hidden="true">⚡</span>
-                        Ofrecer Servicio
+                        {lang === 'es' ? 'Ofrecer Servicio' : 'Offer Service'}
                     </button>
                     <button
                         className="btn btn-primary"
@@ -24,7 +32,7 @@ const Navbar = ({ onOpenProductModal, onOpenServiceModal }) => {
                         id="btn-publish-product"
                     >
                         <span className="btn-icon" aria-hidden="true">+</span>
-                        Publicar Producto
+                        {lang === 'es' ? 'Publicar Producto' : 'Publish Product'}
                     </button>
                 </nav>
             </div>

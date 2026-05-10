@@ -1,0 +1,27 @@
+# Spanish translations for VecinoMarket
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: es\n"
+
+msgid "El nombre no puede estar vacío"
+msgstr "El nombre no puede estar vacío"
+
+msgid "El email no puede estar vacío"
+msgstr "El email no puede estar vacío"
+
+msgid "El precio debe ser mayor a cero"
+msgstr "El precio debe ser mayor a cero"
+
+msgid "Solo usuarios APPROVED pueden publicar."
+msgstr "Solo usuarios aprobados pueden publicar."
+
+msgid "El campo 'nombre' es requerido."
+msgstr "El campo 'nombre' es requerido."
+
+msgid "Debe especificar vendedor_id o comprador_id"
+msgstr "Debe especificar vendedor_id o comprador_id"
+
+msgid "El servicio aliado no está disponible en este momento."
+msgstr "El servicio aliado no está disponible en este momento."

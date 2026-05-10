@@ -1,4 +1,17 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis_broker
+    ports:
+      - "6379:6379"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   api:
     build: .
     container_name: django_web
@@ -9,9 +22,60 @@ services:
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
+      - NOTIFIER_BACKEND=flask
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DJANGO_DEBUG=True
+      - DJANGO_ALLOWED_HOSTS=*
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - ALLIED_SERVICE_URL=${ALLIED_SERVICE_URL:-http://allied-service:8001/api/}
     command: python manage.py runserver 0.0.0.0:8000
+    depends_on:
+      redis:
+        condition: service_healthy
+      flask_service:
+        condition: service_started
     networks:
       - app_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/categorias/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  celery_worker:
+    build: .
+    container_name: celery_worker
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - NOTIFIER_BACKEND=flask
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - ALLIED_SERVICE_URL=${ALLIED_SERVICE_URL:-http://allied-service:8001/api/}
+    command: celery -A core worker -l info --concurrency=2
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - app_network
+
+  flask_service:
+    build:
+      context: ./flask_service
+    container_name: flask_notifications
+    ports:
+      - "5000:5000"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health/')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   frontend:
     build:
@@ -22,15 +86,8 @@ services:
     volumes:
       - ./frontend_react:/app
       - /app/node_modules
-    networks:
-      - app_network
-
-  flask_service:
-    build:
-      context: ./flask_service
-    container_name: flask_notifications
-    ports:
-      - "5000:5000"
+    environment:
+      - VITE_API_URL=http://localhost:8080
     networks:
       - app_network
 
@@ -44,6 +101,7 @@ services:
     depends_on:
       - api
       - flask_service
+      - frontend
     networks:
       - app_network
 

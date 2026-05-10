@@ -268,9 +268,14 @@ class PublicacionService:
         # Persistir
         self.producto_repo.add(producto)
 
-        # Notificar (side effect)
-        notifier = NotifierFactory.create()
-        notifier.notify_listing_created(vendedor.telefono, producto.nombre)
+        # Notificar de forma asíncrona (no bloquea el request)
+        try:
+            from .tasks import enviar_notificacion_async
+            enviar_notificacion_async.delay(vendedor.telefono or "", producto.nombre)
+        except Exception:
+            # Si Celery no está disponible, fallback síncrono
+            notifier = NotifierFactory.create()
+            notifier.notify_listing_created(vendedor.telefono, producto.nombre)
 
         return producto
     
@@ -333,9 +338,13 @@ class ServicioService:
         # Persistir
         self.servicio_repo.add(servicio)
 
-        # Notificar (side effect)
-        notifier = NotifierFactory.create()
-        notifier.notify_listing_created(proveedor.telefono, servicio.nombre)
+        # Notificar de forma asíncrona (no bloquea el request)
+        try:
+            from .tasks import enviar_notificacion_async
+            enviar_notificacion_async.delay(proveedor.telefono or "", servicio.nombre)
+        except Exception:
+            notifier = NotifierFactory.create()
+            notifier.notify_listing_created(proveedor.telefono, servicio.nombre)
 
         return servicio
 

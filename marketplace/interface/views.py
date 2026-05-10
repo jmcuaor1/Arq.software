@@ -9,10 +9,10 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .serializers import (
-    UsuarioSerializer, 
-    UnidadResidencialSerializer, 
+    UsuarioSerializer,
+    UnidadResidencialSerializer,
     CategoriaSerializer,
-    ProductoSerializer, 
+    ProductoSerializer,
     PublicarProductoSerializer,
     ServicioSerializer,
     PublicarServicioSerializer
@@ -35,14 +35,16 @@ from ..application.services import (
 )
 from ..domain.exceptions import DomainError, PermissionError
 from ..infrastructure.repositories import (
-    InMemoryProductoRepository, 
-    InMemoryUsuarioRepository, 
-    InMemoryCategoriaRepository, 
+    InMemoryProductoRepository,
+    InMemoryUsuarioRepository,
+    InMemoryCategoriaRepository,
     InMemoryUnidadResidencialRepository,
     InMemoryServicioRepository,
     InMemoryConsultaRepository
 )
 from ..infrastructure.factories import NotifierFactory
+from ..infrastructure.adapters.gemini_adapter import GeminiAdapter
+from ..infrastructure.adapters.allied_service_adapter import AlliedServiceAdapter
 from .serializers import RegistrarConsultaSerializer, ConsultaSerializer
 
 # ============================================================================
@@ -327,9 +329,93 @@ class ConsultaView(APIView):
             consultas = _consulta_service.listar_consultas_comprador(comprador_id)
         else:
             return Response(
-                {"error": "Debe especificar vendedor_id o comprador_id"}, 
+                {"error": "Debe especificar vendedor_id o comprador_id"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         return Response(ConsultaSerializer(consultas, many=True).data)
+
+
+# ============================================================================
+# Adapter Pattern — Google Gemini AI (generación de descripciones con IA)
+# ============================================================================
+
+_gemini_adapter = GeminiAdapter()
+
+
+class GenerarDescripcionView(APIView):
+    """
+    Endpoint que usa el Adapter Pattern con Google Gemini AI.
+    El dominio depende de DescriptionGeneratorPort (puerto abstracto);
+    GeminiAdapter es la implementación concreta de infraestructura.
+    """
+
+    def post(self, request):
+        nombre = request.data.get("nombre", "").strip()
+        if not nombre:
+            return Response(
+                {"error": "El campo 'nombre' es requerido."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        descripcion = _gemini_adapter.generar_descripcion(nombre)
+        return Response({"descripcion": descripcion})
+
+
+# ============================================================================
+# Servicio Aliado — exponer catálogo y consumir datos externos
+# ============================================================================
+
+_allied_adapter = AlliedServiceAdapter()
+
+
+class CatalogoPublicoView(APIView):
+    """
+    Endpoint público para el equipo aliado.
+    Expone productos y servicios del marketplace en formato estándar.
+    """
+
+    def get(self, request):
+        productos = _publicacion_service.listar_productos()
+        servicios = _servicio_service.listar_servicios()
+
+        catalogo = {
+            "sistema": "VecinoMarket",
+            "version": "2.0",
+            "productos": [
+                {
+                    "id": p.id,
+                    "nombre": p.nombre,
+                    "descripcion": p.descripcion,
+                    "precio_cop": float(p.precio),
+                    "categoria": p.categoria.nombre,
+                    "vendedor": p.vendedor.nombre,
+                }
+                for p in productos
+            ],
+            "servicios": [
+                {
+                    "id": s.id,
+                    "nombre": s.nombre,
+                    "descripcion": s.descripcion,
+                    "precio_cop": float(s.precio),
+                    "categoria": s.categoria.nombre,
+                    "proveedor": s.proveedor.nombre,
+                    "disponible": s.disponible,
+                }
+                for s in servicios
+            ],
+            "total_items": len(productos) + len(servicios),
+        }
+        return Response(catalogo)
+
+
+class DatosAliadoView(APIView):
+    """
+    Consume el endpoint del equipo aliado y retorna sus datos.
+    Implementa fallback graceful si el servicio no está disponible.
+    """
+
+    def get(self, request):
+        datos = _allied_adapter.get_datos_aliado()
+        return Response(datos)
 
