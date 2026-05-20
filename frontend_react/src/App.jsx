@@ -344,7 +344,6 @@ function App() {
                     categorias={categorias}
                     onSubmit={handleSubmitProduct}
                     t={t}
-                    showToast={showToast}
                 />
             </ActionModal>
 
@@ -363,7 +362,6 @@ function App() {
                     categorias={categorias}
                     onSubmit={handleSubmitService}
                     t={t}
-                    showToast={showToast}
                 />
             </ActionModal>
 

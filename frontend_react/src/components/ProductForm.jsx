@@ -1,27 +1,10 @@
 import { useState } from 'react';
-import { generarDescripcion } from '../services/api';
 
-export default function ProductForm({ categorias, onSubmit, t, showToast }) {
+export default function ProductForm({ categorias, onSubmit, t }) {
     const [formData, setFormData] = useState({ vendedor_id: 'user-001', categoria_id: '', nombre: '', precio: '', descripcion: '' });
-    const [generatingDescription, setGeneratingDescription] = useState(false);
 
     const handleChange = (e) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-    };
-
-    const handleGenerateDescription = async () => {
-        if (!formData.nombre?.trim()) return;
-        setGeneratingDescription(true);
-        try {
-            const { descripcion } = await generarDescripcion(formData.nombre);
-            if (descripcion) {
-                setFormData(prev => ({ ...prev, descripcion }));
-            } else {
-                showToast('⚠️ IA no disponible: agrega tu descripción manualmente', 'error');
-            }
-        } finally {
-            setGeneratingDescription(false);
-        }
     };
 
     const handleSubmit = (e) => {
@@ -61,12 +44,7 @@ export default function ProductForm({ categorias, onSubmit, t, showToast }) {
             </div>
             <div className="form-group">
                 <label className="form-label">{t('description')}</label>
-                <div className="description-wrapper">
-                    <textarea name="descripcion" rows="3" placeholder="Detalles de estado, años de uso..." value={formData.descripcion} onChange={handleChange} className="form-textarea" />
-                    <button type="button" className="btn btn-ai" onClick={handleGenerateDescription} disabled={generatingDescription || !formData.nombre}>
-                        {generatingDescription ? t('generatingAI') : t('generateAI')}
-                    </button>
-                </div>
+                <textarea name="descripcion" rows="3" placeholder="Detalles de estado, años de uso..." value={formData.descripcion} onChange={handleChange} className="form-textarea" />
             </div>
         </form>
     );
