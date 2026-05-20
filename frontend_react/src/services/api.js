@@ -1,6 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL
-    ? `${import.meta.env.VITE_API_URL}/api`
-    : 'http://127.0.0.1:8000/api';
+const API_URL = 'http://18.206.66.229:8080/api';
 
 export const fetchProducts = async () => {
     const response = await fetch(`${API_URL}/productos/`);
