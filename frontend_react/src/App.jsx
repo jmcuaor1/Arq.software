@@ -49,6 +49,17 @@ const TRANSLATIONS = {
         description: 'Descripción',
         iAmInterested: 'Soy el interesado:',
         privateMsg: 'Tu Mensaje Privado:',
+        selectSeller: 'Seleccione vendedor...',
+        selectProvider: 'Seleccione proveedor...',
+        selectCategory: 'Seleccione categoría...',
+        selectAccount: 'Seleccione su cuenta...',
+        placeholderProductName: 'Ej: Bicicleta Trek...',
+        placeholderServiceName: 'Ej: Paseo de Perros...',
+        placeholderPrice: '150000',
+        placeholderServicePrice: '25000',
+        placeholderDescription: 'Detalles de estado, años de uso...',
+        placeholderServiceDescription: 'Disponibilidad, herramientas...',
+        placeholderMessage: 'Escribe tu mensaje o pregunta...',
     },
     en: {
         publishProduct: 'Publish Product',
@@ -79,6 +90,17 @@ const TRANSLATIONS = {
         description: 'Description',
         iAmInterested: 'I am interested:',
         privateMsg: 'Your Private Message:',
+        selectSeller: 'Select seller...',
+        selectProvider: 'Select provider...',
+        selectCategory: 'Select category...',
+        selectAccount: 'Select your account...',
+        placeholderProductName: 'E.g: Trek Bicycle...',
+        placeholderServiceName: 'E.g: Dog Walking...',
+        placeholderPrice: '150000',
+        placeholderServicePrice: '25000',
+        placeholderDescription: 'Details about condition, years of use...',
+        placeholderServiceDescription: 'Availability, tools...',
+        placeholderMessage: 'Write your message or question...',
     },
 };
 
@@ -379,7 +401,7 @@ function App() {
                 <div className="form-group">
                     <label className="form-label">{t('iAmInterested')}</label>
                     <select name="comprador_id" required value={formData.comprador_id || ''} onChange={handleInputChange} className="form-select">
-                        <option value="" disabled>Seleccione su cuenta...</option>
+                        <option value="" disabled>{t('selectAccount')}</option>
                         <option value="user-001">Juan Pérez (Apto 101)</option>
                         <option value="user-002">María García (Apto 202)</option>
                         <option value="user-003">Carlos López (Apto 303)</option>
@@ -387,7 +409,7 @@ function App() {
                 </div>
                 <div className="form-group">
                     <label className="form-label">{t('privateMsg')}</label>
-                    <textarea name="mensaje" rows="4" placeholder="Escribe tu mensaje o pregunta..." required value={formData.mensaje || ''} onChange={handleInputChange} className="form-textarea" />
+                    <textarea name="mensaje" rows="4" placeholder={t('placeholderMessage')} required value={formData.mensaje || ''} onChange={handleInputChange} className="form-textarea" />
                 </div>
             </ActionModal>
 

@@ -27,16 +27,16 @@ export default function ProductForm({ categorias, onSubmit, t }) {
             </div>
             <div className="form-group">
                 <label className="form-label">{t('productName')}</label>
-                <input type="text" name="nombre" placeholder="Ej: Bicicleta Trek..." required value={formData.nombre} onChange={handleChange} className="form-input" />
+                <input type="text" name="nombre" placeholder={t('placeholderProductName')} required value={formData.nombre} onChange={handleChange} className="form-input" />
             </div>
             <div className="form-group">
                 <label className="form-label">{t('price')}</label>
-                <input type="number" name="precio" placeholder="150000" min="1" required value={formData.precio} onChange={handleChange} className="form-input" />
+                <input type="number" name="precio" placeholder={t('placeholderPrice')} min="1" required value={formData.precio} onChange={handleChange} className="form-input" />
             </div>
             <div className="form-group">
                 <label className="form-label">{t('category')}</label>
                 <select name="categoria_id" required value={formData.categoria_id} onChange={handleChange} className="form-select">
-                    <option value="" disabled>Seleccione categoría...</option>
+                    <option value="" disabled>{t('selectCategory')}</option>
                     {categorias.map(c => (
                         <option key={c.id} value={c.id}>{c.nombre}</option>
                     ))}
@@ -44,7 +44,7 @@ export default function ProductForm({ categorias, onSubmit, t }) {
             </div>
             <div className="form-group">
                 <label className="form-label">{t('description')}</label>
-                <textarea name="descripcion" rows="3" placeholder="Detalles de estado, años de uso..." value={formData.descripcion} onChange={handleChange} className="form-textarea" />
+                <textarea name="descripcion" rows="3" placeholder={t('placeholderDescription')} value={formData.descripcion} onChange={handleChange} className="form-textarea" />
             </div>
         </form>
     );
