@@ -71,7 +71,7 @@ services:
     build:
       context: ./frontend_react
       args:
-        - VITE_API_URL=http://18.206.66.229:8080
+        - VITE_API_URL=http://44.203.209.134:8080
     container_name: react_frontend
     networks:
       - app_network
