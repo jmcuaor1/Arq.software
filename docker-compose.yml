@@ -37,11 +37,6 @@ services:
         condition: service_started
     networks:
       - app_network
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/categorias/')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   celery_worker:
     build: .
@@ -71,23 +66,13 @@ services:
       - "5000:5000"
     networks:
       - app_network
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health/')"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
 
   frontend:
     build:
       context: ./frontend_react
+      args:
+        - VITE_API_URL=http://18.206.66.229:8080
     container_name: react_frontend
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend_react:/app
-      - /app/node_modules
-    environment:
-      - VITE_API_URL=http://localhost:8080
     networks:
       - app_network
 
