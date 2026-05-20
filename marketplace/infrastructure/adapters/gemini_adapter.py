@@ -33,7 +33,7 @@ class GeminiAdapter(DescriptionGeneratorPort):
         try:
             prompt = self.PROMPT_TEMPLATE.format(nombre=nombre_producto)
             response = self._client.models.generate_content(
-                model="gemini-1.5-flash",
+                model="models/gemini-1.5-flash",
                 contents=prompt,
             )
             return response.text.strip()
