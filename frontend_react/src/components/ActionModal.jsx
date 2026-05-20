@@ -10,6 +10,7 @@ const ActionModal = ({
     isSubmitting = false,
     submitLabel = 'Confirmar',
     apiError = null,
+    formId = null,
 }) => {
     const dialogRef = useRef(null);
 
@@ -65,35 +66,55 @@ const ActionModal = ({
                     {subtitle && <p className="modal-subtitle">{subtitle}</p>}
                 </div>
 
-                <form onSubmit={onSubmit} noValidate>
-                    {children}
-
-                    {apiError && (
-                        <div className="form-api-error" role="alert">
-                            {typeof apiError === 'string'
-                                ? apiError
-                                : Object.entries(apiError).map(([k, v]) => (
-                                    <div key={k}><strong>{k}:</strong> {Array.isArray(v) ? v.join(', ') : v}</div>
-                                ))
-                            }
+                {formId ? (
+                    <div>
+                        {children}
+                        {apiError && (
+                            <div className="form-api-error" role="alert">
+                                {typeof apiError === 'string'
+                                    ? apiError
+                                    : Object.entries(apiError).map(([k, v]) => (
+                                        <div key={k}><strong>{k}:</strong> {Array.isArray(v) ? v.join(', ') : v}</div>
+                                    ))
+                                }
+                            </div>
+                        )}
+                        <div className="form-submit">
+                            <button type="submit" form={formId} className="btn btn-primary btn-full btn-lg" disabled={isSubmitting}>
+                                {isSubmitting ? (
+                                    <span className="btn-loading">
+                                        <span className="spinner" aria-hidden="true"></span>
+                                        Procesando...
+                                    </span>
+                                ) : submitLabel}
+                            </button>
                         </div>
-                    )}
-
-                    <div className="form-submit">
-                        <button
-                            type="submit"
-                            className="btn btn-primary btn-full btn-lg"
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? (
-                                <span className="btn-loading">
-                                    <span className="spinner" aria-hidden="true"></span>
-                                    Procesando...
-                                </span>
-                            ) : submitLabel}
-                        </button>
                     </div>
-                </form>
+                ) : (
+                    <form onSubmit={onSubmit} noValidate>
+                        {children}
+                        {apiError && (
+                            <div className="form-api-error" role="alert">
+                                {typeof apiError === 'string'
+                                    ? apiError
+                                    : Object.entries(apiError).map(([k, v]) => (
+                                        <div key={k}><strong>{k}:</strong> {Array.isArray(v) ? v.join(', ') : v}</div>
+                                    ))
+                                }
+                            </div>
+                        )}
+                        <div className="form-submit">
+                            <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={isSubmitting}>
+                                {isSubmitting ? (
+                                    <span className="btn-loading">
+                                        <span className="spinner" aria-hidden="true"></span>
+                                        Procesando...
+                                    </span>
+                                ) : submitLabel}
+                            </button>
+                        </div>
+                    </form>
+                )}
             </div>
         </div>
     );

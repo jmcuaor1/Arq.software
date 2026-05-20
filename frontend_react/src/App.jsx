@@ -13,9 +13,10 @@ import {
     publishProduct,
     publishService,
     sendConsultation,
-    generarDescripcion,
     fetchAlliedData,
 } from './services/api';
+import ProductForm from './components/ProductForm';
+import ServiceForm from './components/ServiceForm';
 
 // i18n básico (sin dependencia externa)
 const TRANSLATIONS = {
@@ -103,8 +104,6 @@ function App() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [apiError, setApiError] = useState(null);
 
-    // Gemini AI
-    const [generatingDescription, setGeneratingDescription] = useState(false);
 
     // Allied service
     const [alliedData, setAlliedData] = useState(null);
@@ -187,32 +186,11 @@ function App() {
         }
     };
 
-    const handleGenerateDescription = async () => {
-        const nombre = formData.nombre;
-        if (!nombre?.trim()) return;
-        setGeneratingDescription(true);
-        try {
-            const { descripcion } = await generarDescripcion(nombre);
-            if (descripcion) {
-                setFormData(prev => ({ ...prev, descripcion }));
-            } else {
-                showToast('⚠️ IA no disponible: agrega tu descripción manualmente', 'error');
-            }
-        } finally {
-            setGeneratingDescription(false);
-        }
-    };
-
-    const handleSubmitProduct = async (e) => {
-        e.preventDefault();
+    const handleSubmitProduct = async (data) => {
         setIsSubmitting(true);
         setApiError(null);
         try {
-            await publishProduct({
-                ...formData,
-                precio: Math.round(parseFloat(formData.precio)),
-                vendedor_status: 'APPROVED',
-            });
+            await publishProduct(data);
             showToast(`✅ ${t('productPublished')}`);
             closeModal();
             loadData();
@@ -224,16 +202,11 @@ function App() {
         }
     };
 
-    const handleSubmitService = async (e) => {
-        e.preventDefault();
+    const handleSubmitService = async (data) => {
         setIsSubmitting(true);
         setApiError(null);
         try {
-            await publishService({
-                ...formData,
-                precio: Math.round(parseFloat(formData.precio)),
-                proveedor_status: 'APPROVED',
-            });
+            await publishService(data);
             showToast(`✅ ${t('servicePublished')}`);
             closeModal();
             loadData();
@@ -362,65 +335,17 @@ function App() {
                 onClose={closeModal}
                 title={t('publishProduct')}
                 subtitle={t('shareWithNeighbors')}
-                onSubmit={handleSubmitProduct}
                 isSubmitting={isSubmitting}
                 submitLabel={t('confirm')}
                 apiError={apiError}
+                formId="product-form"
             >
-                <div className="form-group">
-                    <label className="form-label">{t('seller')}</label>
-                    <select name="vendedor_id" required value={formData.vendedor_id || ''} onChange={handleInputChange} className="form-select">
-                        <option value="" disabled>Seleccione vendedor...</option>
-                        <option value="user-001">Juan Pérez (Apto 101)</option>
-                        <option value="user-002">María García (Apto 202)</option>
-                    </select>
-                </div>
-                <div className="form-group">
-                    <label className="form-label">{t('productName')}</label>
-                    <input
-                        type="text"
-                        name="nombre"
-                        placeholder="Ej: Bicicleta Trek..."
-                        required
-                        value={formData.nombre || ''}
-                        onChange={handleInputChange}
-                        className="form-input"
-                    />
-                </div>
-                <div className="form-group">
-                    <label className="form-label">{t('price')}</label>
-                    <input type="number" name="precio" placeholder="150000" min="1" required value={formData.precio || ''} onChange={handleInputChange} className="form-input" />
-                </div>
-                <div className="form-group">
-                    <label className="form-label">{t('category')}</label>
-                    <select name="categoria_id" required value={formData.categoria_id || ''} onChange={handleInputChange} className="form-select">
-                        <option value="" disabled>Seleccione categoría...</option>
-                        {categorias.map(c => (
-                            <option key={c.id} value={c.id}>{c.nombre}</option>
-                        ))}
-                    </select>
-                </div>
-                <div className="form-group">
-                    <label className="form-label">{t('description')}</label>
-                    <div className="description-wrapper">
-                        <textarea
-                            name="descripcion"
-                            rows="3"
-                            placeholder="Detalles de estado, años de uso..."
-                            onChange={handleInputChange}
-                            value={formData.descripcion || ''}
-                            className="form-textarea"
-                        />
-                        <button
-                            type="button"
-                            className="btn btn-ai"
-                            onClick={handleGenerateDescription}
-                            disabled={generatingDescription || !formData.nombre}
-                        >
-                            {generatingDescription ? t('generatingAI') : t('generateAI')}
-                        </button>
-                    </div>
-                </div>
+                <ProductForm
+                    categorias={categorias}
+                    onSubmit={handleSubmitProduct}
+                    t={t}
+                    showToast={showToast}
+                />
             </ActionModal>
 
             {/* Modal: Ofrecer Servicio */}
@@ -429,65 +354,17 @@ function App() {
                 onClose={closeModal}
                 title={t('publishService')}
                 subtitle={t('offerSkills')}
-                onSubmit={handleSubmitService}
                 isSubmitting={isSubmitting}
                 submitLabel={t('confirm')}
                 apiError={apiError}
+                formId="service-form"
             >
-                <div className="form-group">
-                    <label className="form-label">{t('provider')}</label>
-                    <select name="proveedor_id" required value={formData.proveedor_id || ''} onChange={handleInputChange} className="form-select">
-                        <option value="" disabled>Seleccione proveedor...</option>
-                        <option value="user-001">Juan Pérez (Apto 101)</option>
-                        <option value="user-002">María García (Apto 202)</option>
-                    </select>
-                </div>
-                <div className="form-group">
-                    <label className="form-label">{t('serviceName')}</label>
-                    <input
-                        type="text"
-                        name="nombre"
-                        placeholder="Ej: Paseo de Perros..."
-                        required
-                        value={formData.nombre || ''}
-                        onChange={handleInputChange}
-                        className="form-input"
-                    />
-                </div>
-                <div className="form-group">
-                    <label className="form-label">{t('price')}</label>
-                    <input type="number" name="precio" placeholder="25000" min="1" required value={formData.precio || ''} onChange={handleInputChange} className="form-input" />
-                </div>
-                <div className="form-group">
-                    <label className="form-label">{t('category')}</label>
-                    <select name="categoria_id" required value={formData.categoria_id || ''} onChange={handleInputChange} className="form-select">
-                        <option value="" disabled>Seleccione categoría...</option>
-                        {categorias.map(c => (
-                            <option key={c.id} value={c.id}>{c.nombre}</option>
-                        ))}
-                    </select>
-                </div>
-                <div className="form-group">
-                    <label className="form-label">{t('description')}</label>
-                    <div className="description-wrapper">
-                        <textarea
-                            name="descripcion"
-                            rows="3"
-                            placeholder="Disponibilidad, herramientas..."
-                            onChange={handleInputChange}
-                            value={formData.descripcion || ''}
-                            className="form-textarea"
-                        />
-                        <button
-                            type="button"
-                            className="btn btn-ai"
-                            onClick={handleGenerateDescription}
-                            disabled={generatingDescription || !formData.nombre}
-                        >
-                            {generatingDescription ? t('generatingAI') : t('generateAI')}
-                        </button>
-                    </div>
-                </div>
+                <ServiceForm
+                    categorias={categorias}
+                    onSubmit={handleSubmitService}
+                    t={t}
+                    showToast={showToast}
+                />
             </ActionModal>
 
             {/* Modal: Consulta */}
