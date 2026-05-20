@@ -166,7 +166,15 @@ function App() {
     };
 
     const openModal = (type, target = null) => {
-        setFormData({});
+        if (type === 'product') {
+            setFormData({ vendedor_id: 'user-001', categoria_id: '' });
+        } else if (type === 'service') {
+            setFormData({ proveedor_id: 'user-001', categoria_id: '' });
+        } else if (type === 'consultation') {
+            setFormData({ comprador_id: 'user-001' });
+        } else {
+            setFormData({});
+        }
         setApiError(null);
         setConsultationTarget(target);
         setActiveModal(type);
@@ -495,7 +503,7 @@ function App() {
             >
                 <div className="form-group">
                     <label className="form-label">{t('iAmInterested')}</label>
-                    <select name="comprador_id" required onChange={handleInputChange} defaultValue="" className="form-select">
+                    <select name="comprador_id" required value={formData.comprador_id || ''} onChange={handleInputChange} className="form-select">
                         <option value="" disabled>Seleccione su cuenta...</option>
                         <option value="user-001">Juan Pérez (Apto 101)</option>
                         <option value="user-002">María García (Apto 202)</option>
@@ -504,7 +512,7 @@ function App() {
                 </div>
                 <div className="form-group">
                     <label className="form-label">{t('privateMsg')}</label>
-                    <textarea name="mensaje" rows="4" placeholder="Escribe tu mensaje o pregunta..." required onChange={handleInputChange} className="form-textarea" />
+                    <textarea name="mensaje" rows="4" placeholder="Escribe tu mensaje o pregunta..." required value={formData.mensaje || ''} onChange={handleInputChange} className="form-textarea" />
                 </div>
             </ActionModal>
 

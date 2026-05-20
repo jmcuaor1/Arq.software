@@ -94,6 +94,18 @@ try:
     _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-ropa", nombre="Ropa y accesorios", descripcion="Ropa, zapatos y accesorios"))
     _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-mascotas", nombre="Mascotas", descripcion="Artículos para mascotas"))
     _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-comida", nombre="Comida y bebidas", descripcion="Alimentos y bebidas"))
+    # Productos pre-sembrados
+    _publicacion_service.publicar_producto(PublicarProductoCommand(vendedor_id="user-001", vendedor_status="APPROVED", nombre="Bicicleta Trek Marlin", descripcion="Bicicleta de montaña en excelente estado, poco uso, con accesorios incluidos.", precio_cop=450000, categoria_id="c-deportes", imagenes=[]))
+    _publicacion_service.publicar_producto(PublicarProductoCommand(vendedor_id="user-002", vendedor_status="APPROVED", nombre="Televisor Samsung 55\"", descripcion="Smart TV 4K, 2 años de uso, funciona perfecto, con control y base.", precio_cop=900000, categoria_id="c-tecnologia", imagenes=[]))
+    _publicacion_service.publicar_producto(PublicarProductoCommand(vendedor_id="user-003", vendedor_status="APPROVED", nombre="Sofá de 3 puestos", descripcion="Sofá gris oscuro en tela, cómodo y en buen estado, sin manchas.", precio_cop=350000, categoria_id="c-hogar", imagenes=[]))
+    _publicacion_service.publicar_producto(PublicarProductoCommand(vendedor_id="user-001", vendedor_status="APPROVED", nombre="Chaqueta de cuero negra", descripcion="Talla M, poco uso, cuero sintético de buena calidad, perfecta para el frío.", precio_cop=120000, categoria_id="c-ropa", imagenes=[]))
+    _publicacion_service.publicar_producto(PublicarProductoCommand(vendedor_id="user-002", vendedor_status="APPROVED", nombre="Kit de comida para perro", descripcion="Concentrado premium 15kg más snacks y juguetes, todo sin abrir.", precio_cop=85000, categoria_id="c-mascotas", imagenes=[]))
+    # Servicios pre-sembrados
+    _servicio_service.publicar_servicio(PublicarServicioCommand(proveedor_id="user-001", proveedor_status="APPROVED", nombre="Plomería a domicilio", descripcion="Reparación de tuberías, llaves y sanitarios. Disponible fines de semana.", precio_cop=60000, categoria_id="c-servicios"))
+    _servicio_service.publicar_servicio(PublicarServicioCommand(proveedor_id="user-002", proveedor_status="APPROVED", nombre="Clases de inglés", descripcion="Clases personalizadas para niños y adultos, nivel básico e intermedio, 1 hora por sesión.", precio_cop=35000, categoria_id="c-general"))
+    _servicio_service.publicar_servicio(PublicarServicioCommand(proveedor_id="user-003", proveedor_status="APPROVED", nombre="Paseo de perros", descripcion="Paseos diarios de 45 minutos por el parque, máximo 2 perros por salida.", precio_cop=25000, categoria_id="c-mascotas"))
+    _servicio_service.publicar_servicio(PublicarServicioCommand(proveedor_id="user-001", proveedor_status="APPROVED", nombre="Reparación de computadores", descripcion="Formateo, limpieza, cambio de partes. Servicio a domicilio en el conjunto.", precio_cop=50000, categoria_id="c-tecnologia"))
+    _servicio_service.publicar_servicio(PublicarServicioCommand(proveedor_id="user-002", proveedor_status="APPROVED", nombre="Preparación de almuerzos", descripcion="Menú casero diario con sopa y seco, entrega en el apartamento de lunes a viernes.", precio_cop=15000, categoria_id="c-comida"))
 except ResourceAlreadyExistsError:
     pass
 
