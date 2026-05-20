@@ -78,3 +78,9 @@ export const fetchCatalogPublico = async () => {
     if (!response.ok) throw new Error('Error fetching public catalog');
     return response.json();
 };
+
+export const fetchConsultasVendedor = async (vendedor_id) => {
+    const response = await fetch(`${API_URL}/consultas/?vendedor_id=${vendedor_id}`);
+    if (!response.ok) throw new Error('Error fetching consultas');
+    return response.json();
+};

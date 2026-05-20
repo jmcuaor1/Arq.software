@@ -18,6 +18,7 @@ import {
 import ProductForm from './components/ProductForm';
 import ServiceForm from './components/ServiceForm';
 import ConsultationForm from './components/ConsultationForm';
+import ConsultasPage from './components/ConsultasPage';
 
 // i18n básico (sin dependencia externa)
 const TRANSLATIONS = {
@@ -109,6 +110,9 @@ function App() {
     // i18n
     const [lang, setLang] = useState('es');
     const t = (key) => TRANSLATIONS[lang]?.[key] || TRANSLATIONS.es[key] || key;
+
+    // Página activa
+    const [page, setPage] = useState('home');
 
     // Data State
     const [productos, setProductos] = useState([]);
@@ -294,8 +298,13 @@ function App() {
                 onOpenServiceModal={() => openModal('service')}
                 lang={lang}
                 onToggleLang={() => setLang(l => l === 'es' ? 'en' : 'es')}
+                onOpenConsultas={() => setPage('consultas')}
             />
 
+            {page === 'consultas' ? (
+                <ConsultasPage onBack={() => setPage('home')} lang={lang} />
+            ) : (
+            <>
             <HeroSection
                 productCount={productos.length}
                 serviceCount={servicios.length}
@@ -350,6 +359,8 @@ function App() {
             </main>
 
             <Footer />
+            </>
+            )}
 
             {/* Modal: Publicar Producto */}
             <ActionModal

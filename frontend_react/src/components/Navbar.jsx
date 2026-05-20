@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Navbar = ({ onOpenProductModal, onOpenServiceModal, lang = 'es', onToggleLang }) => {
+const Navbar = ({ onOpenProductModal, onOpenServiceModal, lang = 'es', onToggleLang, onOpenConsultas }) => {
     return (
         <header className="navbar">
             <div className="container navbar-inner">
@@ -17,6 +17,14 @@ const Navbar = ({ onOpenProductModal, onOpenServiceModal, lang = 'es', onToggleL
                         title={lang === 'es' ? 'Switch to English' : 'Cambiar a Español'}
                     >
                         {lang === 'es' ? '🇨🇴 ES' : '🇺🇸 EN'}
+                    </button>
+                    <button
+                        className="btn btn-secondary"
+                        onClick={onOpenConsultas}
+                        id="btn-consultas"
+                    >
+                        <span className="btn-icon" aria-hidden="true">📬</span>
+                        {lang === 'es' ? 'Mis Consultas' : 'My Consultations'}
                     </button>
                     <button
                         className="btn btn-secondary"
