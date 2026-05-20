@@ -1,4 +1,4 @@
-const API_URL = 'http://44.203.209.134:8080/api';
+const API_URL = 'http://44.207.202.98:8080/api';
 
 export const fetchProducts = async () => {
     const response = await fetch(`${API_URL}/productos/`);
