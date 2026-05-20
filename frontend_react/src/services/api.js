@@ -84,3 +84,14 @@ export const fetchConsultasVendedor = async (vendedor_id) => {
     if (!response.ok) throw new Error('Error fetching consultas');
     return response.json();
 };
+
+export const responderConsulta = async (consulta_id, respuesta) => {
+    const response = await fetch(`${API_URL}/consultas/${consulta_id}/responder/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ respuesta }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw { status: response.status, data };
+    return data;
+};

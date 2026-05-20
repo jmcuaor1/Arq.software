@@ -9,6 +9,7 @@ from .views import (
     GenerarDescripcionView,
     CatalogoPublicoView,
     DatosAliadoView,
+    ResponderConsultaView,
 )
 
 urlpatterns = [
@@ -19,6 +20,7 @@ urlpatterns = [
     path('productos/', ProductoListView.as_view(), name='productos-list-create'),
     path('servicios/', ServicioView.as_view(), name='servicios-list-create'),
     path('consultas/', ConsultaView.as_view(), name='consultas-list-create'),
+    path('consultas/<str:consulta_id>/responder/', ResponderConsultaView.as_view(), name='consultas-responder'),
 
     # Adapter Pattern — Google Gemini AI
     path('ai/generar-descripcion/', GenerarDescripcionView.as_view(), name='ai-generar-descripcion'),

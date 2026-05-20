@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchConsultasVendedor } from '../services/api';
+import { fetchConsultasVendedor, responderConsulta } from '../services/api';
 
 const USUARIOS = [
     { id: 'user-001', nombre: 'Juan Pérez (Apto 101)' },
@@ -13,6 +13,9 @@ export default function ConsultasPage({ onBack, lang }) {
     const [consultas, setConsultas] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [respondiendo, setRespondiendo] = useState(null);
+    const [textoRespuesta, setTextoRespuesta] = useState('');
+    const [enviando, setEnviando] = useState(false);
 
     useEffect(() => {
         cargarConsultas(vendedorId);
@@ -31,6 +34,21 @@ export default function ConsultasPage({ onBack, lang }) {
         }
     };
 
+    const handleResponder = async (consultaId) => {
+        if (!textoRespuesta.trim()) return;
+        setEnviando(true);
+        try {
+            const actualizada = await responderConsulta(consultaId, textoRespuesta);
+            setConsultas(prev => prev.map(c => c.id === consultaId ? actualizada : c));
+            setRespondiendo(null);
+            setTextoRespuesta('');
+        } catch {
+            alert(t('Error al enviar respuesta', 'Error sending response'));
+        } finally {
+            setEnviando(false);
+        }
+    };
+
     return (
         <div className="container" style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
             <button className="btn btn-secondary" onClick={onBack} style={{ marginBottom: '1.5rem' }}>
@@ -46,11 +64,7 @@ export default function ConsultasPage({ onBack, lang }) {
 
             <div className="form-group" style={{ maxWidth: '360px', marginBottom: '2rem' }}>
                 <label className="form-label">{t('Ver consultas de:', 'View consultations for:')}</label>
-                <select
-                    value={vendedorId}
-                    onChange={e => setVendedorId(e.target.value)}
-                    className="form-select"
-                >
+                <select value={vendedorId} onChange={e => setVendedorId(e.target.value)} className="form-select">
                     {USUARIOS.map(u => (
                         <option key={u.id} value={u.id}>{u.nombre}</option>
                     ))}
@@ -63,9 +77,7 @@ export default function ConsultasPage({ onBack, lang }) {
                 </div>
             )}
 
-            {error && (
-                <div className="form-api-error">{error}</div>
-            )}
+            {error && <div className="form-api-error">{error}</div>}
 
             {!loading && !error && consultas.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
@@ -90,9 +102,55 @@ export default function ConsultasPage({ onBack, lang }) {
                                 {c.estado}
                             </span>
                         </div>
-                        <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px', borderLeft: '3px solid var(--accent-primary)' }}>
+
+                        <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px', borderLeft: '3px solid var(--accent-primary)', marginBottom: '0.75rem' }}>
                             "{c.mensaje || t('Sin mensaje', 'No message')}"
                         </p>
+
+                        {c.respuesta && (
+                            <p style={{ color: 'var(--text-primary)', lineHeight: 1.6, background: 'rgba(99,102,241,0.1)', padding: '0.75rem', borderRadius: '8px', borderLeft: '3px solid #6366f1', marginBottom: '0.75rem' }}>
+                                <strong>{t('Tu respuesta:', 'Your response:')}</strong> {c.respuesta}
+                            </p>
+                        )}
+
+                        {respondiendo === c.id ? (
+                            <div style={{ marginTop: '0.75rem' }}>
+                                <textarea
+                                    rows="3"
+                                    className="form-textarea"
+                                    placeholder={t('Escribe tu respuesta...', 'Write your response...')}
+                                    value={textoRespuesta}
+                                    onChange={e => setTextoRespuesta(e.target.value)}
+                                    style={{ marginBottom: '0.5rem' }}
+                                />
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={() => handleResponder(c.id)}
+                                        disabled={enviando || !textoRespuesta.trim()}
+                                    >
+                                        {enviando ? t('Enviando...', 'Sending...') : t('Enviar respuesta', 'Send response')}
+                                    </button>
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() => { setRespondiendo(null); setTextoRespuesta(''); }}
+                                        disabled={enviando}
+                                    >
+                                        {t('Cancelar', 'Cancel')}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            !c.respuesta && (
+                                <button
+                                    className="btn btn-secondary"
+                                    style={{ marginTop: '0.5rem' }}
+                                    onClick={() => { setRespondiendo(c.id); setTextoRespuesta(''); }}
+                                >
+                                    💬 {t('Responder', 'Reply')}
+                                </button>
+                            )
+                        )}
                     </div>
                 ))}
             </div>

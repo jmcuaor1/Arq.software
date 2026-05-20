@@ -401,3 +401,11 @@ class ConsultaService:
         """Lista consultas realizadas por un comprador."""
         todas = self.consulta_repo.list_all()
         return [c for c in todas if c.comprador.id == comprador_id]
+
+    def responder_consulta(self, consulta_id: str, respuesta: str) -> Consulta:
+        """Registra la respuesta del vendedor a una consulta."""
+        consulta = self.consulta_repo.get(consulta_id)
+        if not consulta:
+            raise ResourceNotFoundError(f"Consulta no encontrada: {consulta_id}")
+        consulta.responder(respuesta)
+        return consulta

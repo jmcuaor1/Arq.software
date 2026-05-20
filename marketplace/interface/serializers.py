@@ -84,6 +84,7 @@ class ConsultaSerializer(serializers.Serializer):
     item_nombre = serializers.CharField(source='item.nombre', read_only=True)
     item_vendedor = serializers.SerializerMethodField()
     mensaje = serializers.CharField(read_only=True)
+    respuesta = serializers.CharField(read_only=True, allow_null=True)
     estado = serializers.CharField(source='estado.value', read_only=True)
     fecha = serializers.DateTimeField(read_only=True)
 
@@ -98,4 +99,8 @@ class RegistrarConsultaSerializer(serializers.Serializer):
     item_id = serializers.CharField(max_length=50)
     item_type = serializers.ChoiceField(choices=['producto', 'servicio'])
     mensaje = serializers.CharField(required=False, allow_blank=True, max_length=500)
+
+class ResponderConsultaSerializer(serializers.Serializer):
+    """Serializer para responder una consulta."""
+    respuesta = serializers.CharField(max_length=500)
 

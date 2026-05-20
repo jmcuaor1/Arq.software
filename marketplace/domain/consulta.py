@@ -30,6 +30,7 @@ class Consulta:
     comprador: Usuario
     item: Union[Producto, Servicio]
     mensaje: Optional[str] = None
+    respuesta: Optional[str] = None
     fecha: datetime = field(default_factory=datetime.now)
     estado: EstadoConsulta = EstadoConsulta.PENDIENTE
 
@@ -43,6 +44,13 @@ class Consulta:
             
         if not self.item:
             raise ValidationError("La consulta debe referirse a un producto o servicio.")
+
+    def responder(self, texto: str) -> None:
+        """Registra una respuesta del vendedor y marca como contactado."""
+        if not texto or not texto.strip():
+            raise ValidationError("La respuesta no puede estar vacía.")
+        self.respuesta = texto.strip()
+        self.estado = EstadoConsulta.CONTACTADO
 
     def marcar_contactado(self) -> None:
         """Marca la consulta como contactada."""

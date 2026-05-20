@@ -46,7 +46,7 @@ from ..infrastructure.repositories import (
 from ..infrastructure.factories import NotifierFactory
 from ..infrastructure.adapters.gemini_adapter import GeminiAdapter
 from ..infrastructure.adapters.allied_service_adapter import AlliedServiceAdapter
-from .serializers import RegistrarConsultaSerializer, ConsultaSerializer
+from .serializers import RegistrarConsultaSerializer, ConsultaSerializer, ResponderConsultaSerializer
 
 # ============================================================================
 # Dependency Injection (repositorios y servicios globales)
@@ -446,3 +446,22 @@ class DatosAliadoView(APIView):
     def get(self, request):
         datos = _allied_adapter.get_datos_aliado()
         return Response(datos)
+
+
+class ResponderConsultaView(APIView):
+    """Permite al vendedor responder una consulta recibida."""
+
+    def post(self, request, consulta_id):
+        serializer = ResponderConsultaSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            consulta = _consulta_service.responder_consulta(
+                consulta_id=consulta_id,
+                respuesta=serializer.validated_data['respuesta']
+            )
+            return Response(ConsultaSerializer(consulta).data)
+        except ResourceNotFoundError as e:
+            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except DomainError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
