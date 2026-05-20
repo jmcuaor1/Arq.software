@@ -17,6 +17,7 @@ from .serializers import (
     ServicioSerializer,
     PublicarServicioSerializer
 )
+from ..application.tasks import enviar_notificacion_async
 from ..application.services import (
     UsuarioService,
     UnidadResidencialService,
@@ -219,6 +220,15 @@ class ProductoListView(APIView):
             )
             producto = _publicacion_service.publicar_producto(cmd)
             
+            # Comunicación asíncrona: Notificar al vendedor sobre la publicación
+            try:
+                vendedor = _usuario_repo.get(producto.vendedor.id)
+                if vendedor and vendedor.telefono:
+                    enviar_notificacion_async.delay(vendedor.telefono, producto.nombre)
+            except Exception:
+                # Fallback silencioso si Celery/Redis no están disponibles
+                pass
+
             return Response(
                 ProductoSerializer(producto).data,
                 status=status.HTTP_201_CREATED
@@ -418,4 +428,3 @@ class DatosAliadoView(APIView):
     def get(self, request):
         datos = _allied_adapter.get_datos_aliado()
         return Response(datos)
-
