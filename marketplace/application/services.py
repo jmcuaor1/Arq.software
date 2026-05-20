@@ -268,15 +268,6 @@ class PublicacionService:
         # Persistir
         self.producto_repo.add(producto)
 
-        # Notificar de forma asíncrona (no bloquea el request)
-        try:
-            from .tasks import enviar_notificacion_async
-            enviar_notificacion_async.delay(vendedor.telefono or "", producto.nombre)
-        except Exception:
-            # Si Celery no está disponible, fallback síncrono
-            notifier = NotifierFactory.create()
-            notifier.notify_listing_created(vendedor.telefono, producto.nombre)
-
         return producto
     
     def listar_productos(self) -> List[Producto]:
@@ -337,14 +328,6 @@ class ServicioService:
 
         # Persistir
         self.servicio_repo.add(servicio)
-
-        # Notificar de forma asíncrona (no bloquea el request)
-        try:
-            from .tasks import enviar_notificacion_async
-            enviar_notificacion_async.delay(proveedor.telefono or "", servicio.nombre)
-        except Exception:
-            notifier = NotifierFactory.create()
-            notifier.notify_listing_created(proveedor.telefono, servicio.nombre)
 
         return servicio
 
@@ -416,4 +399,3 @@ class ConsultaService:
         """Lista consultas realizadas por un comprador."""
         todas = self.consulta_repo.list_all()
         return [c for c in todas if c.comprador.id == comprador_id]
-
