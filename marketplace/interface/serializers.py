@@ -46,12 +46,12 @@ class PublicarProductoSerializer(serializers.Serializer):
     vendedor_id = serializers.CharField(max_length=50)
     vendedor_status = serializers.CharField(max_length=20)
     nombre = serializers.CharField(max_length=100)
-    descripcion = serializers.CharField()
+    descripcion = serializers.CharField(required=False, allow_blank=True, default='')
     precio = serializers.IntegerField(min_value=1)
     categoria_id = serializers.CharField(max_length=50)
     imagenes = serializers.ListField(
-        child=serializers.URLField(), 
-        required=False, 
+        child=serializers.URLField(),
+        required=False,
         default=list
     )
 
@@ -72,7 +72,7 @@ class PublicarServicioSerializer(serializers.Serializer):
     proveedor_id = serializers.CharField(max_length=50)
     proveedor_status = serializers.CharField(max_length=20)
     nombre = serializers.CharField(max_length=100)
-    descripcion = serializers.CharField()
+    descripcion = serializers.CharField(required=False, allow_blank=True, default='')
     precio = serializers.IntegerField(min_value=1)
     categoria_id = serializers.CharField(max_length=50)
 

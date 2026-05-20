@@ -9,6 +9,7 @@ import Footer from './components/Footer';
 import {
     fetchProducts,
     fetchServices,
+    fetchCategories,
     publishProduct,
     publishService,
     sendConsultation,
@@ -88,6 +89,7 @@ function App() {
     // Data State
     const [productos, setProductos] = useState([]);
     const [servicios, setServicios] = useState([]);
+    const [categorias, setCategorias] = useState([]);
     const [loading, setLoading] = useState(true);
 
     // Filter State
@@ -118,9 +120,10 @@ function App() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [p, s] = await Promise.all([fetchProducts(), fetchServices()]);
+            const [p, s, cats] = await Promise.all([fetchProducts(), fetchServices(), fetchCategories()]);
             setProductos(p);
             setServicios(s);
+            setCategorias(cats);
         } catch {
             showToast(t('loadingError'), 'error');
         } finally {
@@ -184,6 +187,8 @@ function App() {
             const { descripcion } = await generarDescripcion(nombre);
             if (descripcion) {
                 setFormData(prev => ({ ...prev, descripcion }));
+            } else {
+                showToast('⚠️ IA no disponible: agrega tu descripción manualmente', 'error');
             }
         } finally {
             setGeneratingDescription(false);
@@ -197,7 +202,7 @@ function App() {
         try {
             await publishProduct({
                 ...formData,
-                precio: parseFloat(formData.precio),
+                precio: Math.round(parseFloat(formData.precio)),
                 vendedor_status: 'APPROVED',
             });
             showToast(`✅ ${t('productPublished')}`);
@@ -218,7 +223,7 @@ function App() {
         try {
             await publishService({
                 ...formData,
-                precio: parseFloat(formData.precio),
+                precio: Math.round(parseFloat(formData.precio)),
                 proveedor_status: 'APPROVED',
             });
             showToast(`✅ ${t('servicePublished')}`);
@@ -356,7 +361,7 @@ function App() {
             >
                 <div className="form-group">
                     <label className="form-label">{t('seller')}</label>
-                    <select name="vendedor_id" required onChange={handleInputChange} defaultValue="" className="form-select">
+                    <select name="vendedor_id" required value={formData.vendedor_id || ''} onChange={handleInputChange} className="form-select">
                         <option value="" disabled>Seleccione vendedor...</option>
                         <option value="user-001">Juan Pérez (Apto 101)</option>
                         <option value="user-002">María García (Apto 202)</option>
@@ -369,19 +374,22 @@ function App() {
                         name="nombre"
                         placeholder="Ej: Bicicleta Trek..."
                         required
+                        value={formData.nombre || ''}
                         onChange={handleInputChange}
                         className="form-input"
                     />
                 </div>
                 <div className="form-group">
                     <label className="form-label">{t('price')}</label>
-                    <input type="number" name="precio" placeholder="150000" min="0" required onChange={handleInputChange} className="form-input" />
+                    <input type="number" name="precio" placeholder="150000" min="1" required value={formData.precio || ''} onChange={handleInputChange} className="form-input" />
                 </div>
                 <div className="form-group">
                     <label className="form-label">{t('category')}</label>
-                    <select name="categoria_id" required onChange={handleInputChange} defaultValue="" className="form-select">
+                    <select name="categoria_id" required value={formData.categoria_id || ''} onChange={handleInputChange} className="form-select">
                         <option value="" disabled>Seleccione categoría...</option>
-                        <option value="c-general">Categoría General</option>
+                        {categorias.map(c => (
+                            <option key={c.id} value={c.id}>{c.nombre}</option>
+                        ))}
                     </select>
                 </div>
                 <div className="form-group">
@@ -420,7 +428,7 @@ function App() {
             >
                 <div className="form-group">
                     <label className="form-label">{t('provider')}</label>
-                    <select name="proveedor_id" required onChange={handleInputChange} defaultValue="" className="form-select">
+                    <select name="proveedor_id" required value={formData.proveedor_id || ''} onChange={handleInputChange} className="form-select">
                         <option value="" disabled>Seleccione proveedor...</option>
                         <option value="user-001">Juan Pérez (Apto 101)</option>
                         <option value="user-002">María García (Apto 202)</option>
@@ -433,19 +441,22 @@ function App() {
                         name="nombre"
                         placeholder="Ej: Paseo de Perros..."
                         required
+                        value={formData.nombre || ''}
                         onChange={handleInputChange}
                         className="form-input"
                     />
                 </div>
                 <div className="form-group">
                     <label className="form-label">{t('price')}</label>
-                    <input type="number" name="precio" placeholder="25000" min="0" required onChange={handleInputChange} className="form-input" />
+                    <input type="number" name="precio" placeholder="25000" min="1" required value={formData.precio || ''} onChange={handleInputChange} className="form-input" />
                 </div>
                 <div className="form-group">
                     <label className="form-label">{t('category')}</label>
-                    <select name="categoria_id" required onChange={handleInputChange} defaultValue="" className="form-select">
+                    <select name="categoria_id" required value={formData.categoria_id || ''} onChange={handleInputChange} className="form-select">
                         <option value="" disabled>Seleccione categoría...</option>
-                        <option value="c-servicios">Servicios Generales</option>
+                        {categorias.map(c => (
+                            <option key={c.id} value={c.id}>{c.nombre}</option>
+                        ))}
                     </select>
                 </div>
                 <div className="form-group">

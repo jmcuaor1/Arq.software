@@ -251,12 +251,13 @@ class PublicacionService:
             raise PermissionError("Solo usuarios APPROVED pueden publicar.")
 
         # Construir producto usando Builder (validaciones de dominio)
+        desc = cmd.descripcion.strip() if cmd.descripcion else None
         builder = (
             ProductoBuilder(max_images=self.max_images)
             .vendedor(vendedor)
             .categoria(categoria)
             .nombre(cmd.nombre)
-            .descripcion(cmd.descripcion)
+            .descripcion(desc if desc else None)
             .precio_cop(cmd.precio_cop)
         )
 
@@ -316,10 +317,11 @@ class ServicioService:
 
         # Crear servicio (validaciones en __post_init__)
         import uuid
+        desc = cmd.descripcion.strip() if cmd.descripcion else None
         servicio = Servicio(
             id=str(uuid.uuid4()),
             nombre=cmd.nombre,
-            descripcion=cmd.descripcion,
+            descripcion=desc if desc else None,
             precio=cmd.precio_cop,
             proveedor=proveedor,
             categoria=categoria,

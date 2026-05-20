@@ -86,8 +86,14 @@ try:
     _usuario_service.crear_usuario(CrearUsuarioCommand(id="user-001", nombre="Juan Pérez", email="juan@test.com", telefono="3001234567", apartamento="101"))
     _usuario_service.crear_usuario(CrearUsuarioCommand(id="user-002", nombre="María García", email="mariag@test.com", telefono="3109876543", apartamento="202"))
     _usuario_service.crear_usuario(CrearUsuarioCommand(id="user-003", nombre="Carlos López", email="carlos@test.com", telefono="3200000000", apartamento="303"))
-    _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-general", nombre="General", descripcion="General"))
-    _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-servicios", nombre="Servicios", descripcion="Servicios"))
+    _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-general", nombre="General", descripcion="Artículos generales"))
+    _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-servicios", nombre="Servicios del hogar", descripcion="Servicios para el hogar"))
+    _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-tecnologia", nombre="Tecnología", descripcion="Electrónicos y tecnología"))
+    _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-hogar", nombre="Hogar y muebles", descripcion="Muebles y artículos del hogar"))
+    _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-deportes", nombre="Deportes", descripcion="Artículos deportivos"))
+    _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-ropa", nombre="Ropa y accesorios", descripcion="Ropa, zapatos y accesorios"))
+    _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-mascotas", nombre="Mascotas", descripcion="Artículos para mascotas"))
+    _categoria_service.crear_categoria(CrearCategoriaCommand(id="c-comida", nombre="Comida y bebidas", descripcion="Alimentos y bebidas"))
 except ResourceAlreadyExistsError:
     pass
 

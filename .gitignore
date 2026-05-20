@@ -25,6 +25,9 @@ npm-debug.log*
 db.sqlite3
 .env
 
+# Claude Code
+CLAUDE.md
+
 # OS
 .DS_Store
 Thumbs.db
