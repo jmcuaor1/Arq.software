@@ -17,6 +17,7 @@ import {
 } from './services/api';
 import ProductForm from './components/ProductForm';
 import ServiceForm from './components/ServiceForm';
+import ConsultationForm from './components/ConsultationForm';
 
 // i18n básico (sin dependencia externa)
 const TRANSLATIONS = {
@@ -240,16 +241,15 @@ function App() {
         }
     };
 
-    const handleSubmitConsultation = async (e) => {
-        e.preventDefault();
+    const handleSubmitConsultation = async (data) => {
         setIsSubmitting(true);
         setApiError(null);
         try {
             await sendConsultation({
-                comprador_id: formData.comprador_id || 'user-003',
+                comprador_id: data.comprador_id,
                 item_id: consultationTarget.item.id,
                 item_type: consultationTarget.type,
-                mensaje: formData.mensaje || '',
+                mensaje: data.mensaje || '',
             });
             showToast(`📬 ${t('messageSent')}`);
             closeModal();
@@ -393,24 +393,12 @@ function App() {
                 onClose={closeModal}
                 title={`${t('contact')} — ${consultationTarget?.item?.nombre || ''}`}
                 subtitle={t('privateMessage')}
-                onSubmit={handleSubmitConsultation}
                 isSubmitting={isSubmitting}
                 submitLabel={t('confirm')}
                 apiError={apiError}
+                formId="consultation-form"
             >
-                <div className="form-group">
-                    <label className="form-label">{t('iAmInterested')}</label>
-                    <select name="comprador_id" required value={formData.comprador_id || ''} onChange={handleInputChange} className="form-select">
-                        <option value="" disabled>{t('selectAccount')}</option>
-                        <option value="user-001">Juan Pérez (Apto 101)</option>
-                        <option value="user-002">María García (Apto 202)</option>
-                        <option value="user-003">Carlos López (Apto 303)</option>
-                    </select>
-                </div>
-                <div className="form-group">
-                    <label className="form-label">{t('privateMsg')}</label>
-                    <textarea name="mensaje" rows="4" placeholder={t('placeholderMessage')} required value={formData.mensaje || ''} onChange={handleInputChange} className="form-textarea" />
-                </div>
+                <ConsultationForm onSubmit={handleSubmitConsultation} t={t} />
             </ActionModal>
 
             {/* Toast Notifications */}
